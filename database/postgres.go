@@ -24,7 +24,7 @@ func NewPostgresRepository(url string) (*PostgresRepository, error) {
 
 func (repo *PostgresRepository) InsertUser(ctx context.Context, user *models.User) error {
 	// execContext permite ejecutar codigo sql
-	_, err := repo.db.ExecContext(ctx, "INSERT INTO users (email, password) VALUES ($1, $2)", user.Email, user.Password)
+	_, err := repo.db.ExecContext(ctx, "INSERT INTO users (id, email, password) VALUES ($1, $2, $3)", user.Id, user.Email, user.Password)
 	return err
 }
 
@@ -56,4 +56,30 @@ func (repo *PostgresRepository) GetUserById(ctx context.Context, id string) (*mo
 
 func (repo *PostgresRepository) Close() error {
 	return repo.db.Close() // cierra conexion de la base de datos cuando se deja usar.
+}
+
+func (repo *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	rows, err := repo.db.QueryContext(ctx, "SELECT id, email, password FROM users WHERE email = $1", email)
+
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	var user = models.User{}
+	for rows.Next() {
+		// toma rows he intenta mapear los valores de las columnas "SELECT id email FROM" dentro del modelo de datos de usuario.
+		if err = rows.Scan(&user.Id, &user.Email); err == nil { // parseo datos para se adaptados al modelo user
+			return &user, nil
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+
 }

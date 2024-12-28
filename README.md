@@ -33,7 +33,19 @@ libreria para que postgres funcione.
     go get github.com/lib/pq
 ```
 
-liberia no devolveta texto aleatorio para el ID 
+libreria no devolveta texto aleatorio para el ID 
 ```bash
     go get github.com/segmentio/ksuid
+```
+
+libreria para hacer hashig a las contrase;as de usario.
+
+```bash
+    go get golang.org/x/crypto/bcrypt
+```
+
+libreria que nos ayudara con los tokes
+
+```bash
+    go get github.com/golang-jwt/jwt
 ```

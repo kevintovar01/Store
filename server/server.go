@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/kevintovar01/Store/database"
+	"github.com/kevintovar01/Store/repository"
 )
 
 type Config struct {
@@ -33,15 +35,15 @@ func NewServer(ctx context.Context, config *Config) (*Broker, error) {
 
 	// verification to fields are not empty
 	if config.Port == "" {
-		return nil, errors.New("Port is required")
+		return nil, errors.New("port is required")
 	}
 
 	if config.JWTSecret == "" {
-		return nil, errors.New("Key secret is required")
+		return nil, errors.New("key secret is required")
 	}
 
 	if config.DatabaseUrl == "" {
-		return nil, errors.New("DB url is required")
+		return nil, errors.New("db url is required")
 	}
 
 	broker := &Broker{
@@ -55,6 +57,11 @@ func NewServer(ctx context.Context, config *Config) (*Broker, error) {
 func (b *Broker) Start(binder func(s Server, r *mux.Router)) {
 	b.router = mux.NewRouter()
 	binder(b, b.router)
+	repo, err := database.NewPostgresRepository(b.config.DatabaseUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	repository.SetRepository(repo)
 	log.Println("Start server on port", b.Config().Port)
 	if err := http.ListenAndServe(b.config.Port, b.router); err != nil {
 		log.Fatal("ListenAndServe: ", err)
