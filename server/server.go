@@ -55,15 +55,28 @@ func NewServer(ctx context.Context, config *Config) (*Broker, error) {
 }
 
 func (b *Broker) Start(binder func(s Server, r *mux.Router)) {
+	// Crea un nuevo enrutador de mux
 	b.router = mux.NewRouter()
+
+	// Llama a la función binder para configurar las rutas del servidor
 	binder(b, b.router)
+
+	// Crea un nuevo repositorio de PostgreSQL utilizando la URL de la base de datos de la configuración
 	repo, err := database.NewPostgresRepository(b.config.DatabaseUrl)
 	if err != nil {
+		// Si hay un error al crear el repositorio, se registra y se termina el programa
 		log.Fatal(err)
 	}
+
+	// Establece el repositorio globalmente
 	repository.SetRepository(repo)
+
+	// Imprime un mensaje indicando que el servidor está iniciando en el puerto configurado
 	log.Println("Start server on port", b.Config().Port)
+
+	// Inicia el servidor HTTP en el puerto configurado y utiliza el enrutador configurado
 	if err := http.ListenAndServe(b.config.Port, b.router); err != nil {
+		// Si hay un error al iniciar el servidor, se registra y se termina el programa
 		log.Fatal("ListenAndServe: ", err)
 	}
 }

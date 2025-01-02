@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/kevintovar01/Store/handlers"
+	"github.com/kevintovar01/Store/middleware"
 	"github.com/kevintovar01/Store/server"
 )
 
@@ -35,6 +36,16 @@ func main() {
 }
 
 func BindRoutes(s server.Server, r *mux.Router) {
+	// Le estamos diciendo a nuestro router, que para cada una de esas rutas use el middleware CheckAuthMiddleware
+	r.Use(middleware.CheckAuthMiddleware(s))
+
 	r.HandleFunc("/", handlers.HomeHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/signup", handlers.SingUpHandler(s)).Methods(http.MethodPost)
+	r.HandleFunc("/login", handlers.LoginHandler(s)).Methods(http.MethodPost)
+	r.HandleFunc("/me", handlers.MyHandler(s)).Methods(http.MethodGet)
+	r.HandleFunc("/posts", handlers.InsertPostHandler(s)).Methods(http.MethodPost)
+	r.HandleFunc("/posts/{id}", handlers.GetpostByIdHandler(s)).Methods(http.MethodGet)
+	r.HandleFunc("/posts/{id}", handlers.UpdatePostHandler(s)).Methods(http.MethodPut)
+	r.HandleFunc("/posts/{id}", handlers.DeletePostHandler(s)).Methods(http.MethodDelete)
+
 }

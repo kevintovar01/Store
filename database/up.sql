@@ -6,3 +6,24 @@ CREATE TABLE users(
     email VARCHAR(255) UNIQUE NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+DROP TABLE IF EXISTS products;
+
+CREATE TABLE products(
+    id VARCHAR(32) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    image_url VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW() 
+);
+
+DROP TABLE IF EXISTS posts;
+
+CREATE TABLE posts(
+    id VARCHAR(32) PRIMARY KEY, 
+    post_content TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    user_id VARCHAR(32) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);

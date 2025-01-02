@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/kevintovar01/Store/middleware"
 	"github.com/kevintovar01/Store/models"
 	"github.com/kevintovar01/Store/repository"
 	"github.com/kevintovar01/Store/server"
@@ -42,12 +43,12 @@ func SingUpHandler(s server.Server) http.HandlerFunc {
 
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), HASH_COST) // Encriptacion de password
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "invalid token", http.StatusUnauthorized)
 		}
 
 		id, err := ksuid.NewRandom() // id aletorio.
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
 		}
 
@@ -121,5 +122,29 @@ func LoginHandler(s server.Server) http.HandlerFunc {
 			Token: tokenString,
 		})
 
+	}
+}
+
+func MyHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token, err := middleware.TokenAuth(s, w, *r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		if claims, ok := token.Claims.(*models.AppClaims); ok && token.Valid {
+			user, err := repository.GetUserById(r.Context(), claims.UserId)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("content-type", "application/json")
+			json.NewEncoder(w).Encode(user)
+
+		} else {
+			http.Error(w, "invalid token", http.StatusInternalServerError)
+			return
+		}
 	}
 }
