@@ -10,6 +10,10 @@ import (
 	_ "github.com/lib/pq" // necesarion para que los drives de postgres funcionen.
 )
 
+const (
+	PAGINATION_SIZE = 2
+)
+
 type PostgresRepository struct {
 	db *sql.DB
 }
@@ -144,6 +148,35 @@ func (repo *PostgresRepository) UpdatePost(ctx context.Context, post *models.Pos
 func (repo *PostgresRepository) DeletePost(ctx context.Context, id string, userId string) error {
 	_, err := repo.db.ExecContext(ctx, "DELETE FROM posts WHERE id = $1 and user_id = $2", id, userId)
 	return err
+}
+
+func (repo *PostgresRepository) ListPost(ctx context.Context, page uint64) ([]*models.Post, error) {
+	// offset es la cantidad de registros que se saltara
+	rows, err := repo.db.QueryContext(ctx, "SELECT id, post_content, user_id, created_at FROM posts LIMIT $1 OFFSET $2", PAGINATION_SIZE, page*PAGINATION_SIZE)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	var posts []*models.Post
+	for rows.Next() {
+		var post = models.Post{}
+		if err = rows.Scan(&post.Id, &post.PostContent, &post.UserId, &post.CreatedAt); err == nil {
+			posts = append(posts, &post)
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return posts, nil
 }
 
 func (repo *PostgresRepository) InsertProduct(ctx context.Context, product *models.Product) error {
