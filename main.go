@@ -11,6 +11,7 @@ import (
 	"github.com/kevintovar01/Store/handlers"
 	"github.com/kevintovar01/Store/middleware"
 	"github.com/kevintovar01/Store/server"
+	"github.com/kevintovar01/Store/websocket"
 )
 
 func main() {
@@ -36,6 +37,8 @@ func main() {
 }
 
 func BindRoutes(s server.Server, r *mux.Router) {
+
+	hub := websocket.NewHub()
 	// Le estamos diciendo a nuestro router, que para cada una de esas rutas use el middleware CheckAuthMiddleware
 	r.Use(middleware.CheckAuthMiddleware(s))
 
@@ -48,5 +51,7 @@ func BindRoutes(s server.Server, r *mux.Router) {
 	r.HandleFunc("/posts/{id}", handlers.UpdatePostHandler(s)).Methods(http.MethodPut)
 	r.HandleFunc("/posts/{id}", handlers.DeletePostHandler(s)).Methods(http.MethodDelete)
 	r.HandleFunc("/posts", handlers.ListPostHandler(s)).Methods(http.MethodGet)
+	// el handler de websocket se encarga de manejar las conexiones de websocket
+	r.HandleFunc("/ws", hub.HandleWebSocket)
 
 }
