@@ -11,7 +11,6 @@ import (
 	"github.com/kevintovar01/Store/handlers"
 	"github.com/kevintovar01/Store/middleware"
 	"github.com/kevintovar01/Store/server"
-	"github.com/kevintovar01/Store/websocket"
 )
 
 func main() {
@@ -37,21 +36,21 @@ func main() {
 }
 
 func BindRoutes(s server.Server, r *mux.Router) {
+	api := r.PathPrefix("/api/v1").Subrouter()
 
-	hub := websocket.NewHub()
 	// Le estamos diciendo a nuestro router, que para cada una de esas rutas use el middleware CheckAuthMiddleware
-	r.Use(middleware.CheckAuthMiddleware(s))
+	api.Use(middleware.CheckAuthMiddleware(s))
 
 	r.HandleFunc("/", handlers.HomeHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/signup", handlers.SingUpHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/login", handlers.LoginHandler(s)).Methods(http.MethodPost)
-	r.HandleFunc("/me", handlers.MyHandler(s)).Methods(http.MethodGet)
-	r.HandleFunc("/posts", handlers.InsertPostHandler(s)).Methods(http.MethodPost)
+	api.HandleFunc("/me", handlers.MyHandler(s)).Methods(http.MethodGet)
+	api.HandleFunc("/posts", handlers.InsertPostHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/posts/{id}", handlers.GetpostByIdHandler(s)).Methods(http.MethodGet)
-	r.HandleFunc("/posts/{id}", handlers.UpdatePostHandler(s)).Methods(http.MethodPut)
-	r.HandleFunc("/posts/{id}", handlers.DeletePostHandler(s)).Methods(http.MethodDelete)
+	api.HandleFunc("/posts/{id}", handlers.UpdatePostHandler(s)).Methods(http.MethodPut)
+	api.HandleFunc("/posts/{id}", handlers.DeletePostHandler(s)).Methods(http.MethodDelete)
 	r.HandleFunc("/posts", handlers.ListPostHandler(s)).Methods(http.MethodGet)
 	// el handler de websocket se encarga de manejar las conexiones de websocket
-	r.HandleFunc("/ws", hub.HandleWebSocket)
+	r.HandleFunc("/ws", s.Hub().HandleWebSocket)
 
 }

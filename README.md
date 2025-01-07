@@ -51,4 +51,12 @@ libreria que nos ayudara con los tokes
 ```
 
 
-middleware valida si los tokes estan authenticados
+# middleware valida si los tokes estan authenticados
+
+
+libreria que nos permite habilitar todos los dominios para que 
+la API pueda responser a ellos.
+
+```bash
+    go get github.com/rs/cors
+```

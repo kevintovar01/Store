@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	PAGINATION_SIZE = 2
+	PAGINATION_SIZE = 27
 )
 
 type PostgresRepository struct {
