@@ -15,6 +15,7 @@ var (
 	NOT_AUTH_NEEDED = []string{
 		"signup",
 		"login",
+		"/",
 	}
 )
 
@@ -62,6 +63,8 @@ func TokenAuth(s server.Server, w http.ResponseWriter, r http.Request) (*jwt.Tok
 	if tokenString == "" {
 		return nil, fmt.Errorf("authorization header missing")
 	}
+
+	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 
 	// Intenta parsear y validar el token
 	token, err := jwt.ParseWithClaims(tokenString, &models.AppClaims{}, func(token *jwt.Token) (interface{}, error) {

@@ -36,20 +36,21 @@ func main() {
 }
 
 func BindRoutes(s server.Server, r *mux.Router) {
-	api := r.PathPrefix("/api/v1").Subrouter()
+	// api := r.PathPrefix("/api/v1").Subrouter()
 
 	// Le estamos diciendo a nuestro router, que para cada una de esas rutas use el middleware CheckAuthMiddleware
-	api.Use(middleware.CheckAuthMiddleware(s))
+	r.Use(middleware.CheckAuthMiddleware(s))
 
 	r.HandleFunc("/", handlers.HomeHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/signup", handlers.SingUpHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/login", handlers.LoginHandler(s)).Methods(http.MethodPost)
-	api.HandleFunc("/me", handlers.MyHandler(s)).Methods(http.MethodGet)
-	api.HandleFunc("/posts", handlers.InsertPostHandler(s)).Methods(http.MethodPost)
-	r.HandleFunc("/posts/{id}", handlers.GetpostByIdHandler(s)).Methods(http.MethodGet)
-	api.HandleFunc("/posts/{id}", handlers.UpdatePostHandler(s)).Methods(http.MethodPut)
-	api.HandleFunc("/posts/{id}", handlers.DeletePostHandler(s)).Methods(http.MethodDelete)
-	r.HandleFunc("/posts", handlers.ListPostHandler(s)).Methods(http.MethodGet)
+	r.HandleFunc("/me", handlers.MyHandler(s)).Methods(http.MethodGet)
+	r.HandleFunc("/products", handlers.InsertProductHandler(s)).Methods(http.MethodPost)
+	r.HandleFunc("/image/{id}", handlers.InsertImageHandler(s)).Methods(http.MethodPost)
+	r.HandleFunc("/products/{id}", handlers.GetProductByIdHandler(s)).Methods(http.MethodGet)
+	r.HandleFunc("/products/{id}", handlers.UpdateProductHandler(s)).Methods(http.MethodPut)
+	r.HandleFunc("/products/{id}", handlers.DeleteProductHandler(s)).Methods(http.MethodDelete)
+	r.HandleFunc("/products", handlers.ListProductHandler(s)).Methods(http.MethodGet)
 	// el handler de websocket se encarga de manejar las conexiones de websocket
 	r.HandleFunc("/ws", s.Hub().HandleWebSocket)
 

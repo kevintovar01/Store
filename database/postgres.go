@@ -91,30 +91,78 @@ func (repo *PostgresRepository) GetUserByEmail(ctx context.Context, email string
 
 }
 
-func (repo *PostgresRepository) InsertPost(ctx context.Context, post *models.Post) error {
-	// Log para depuración
-	log.Println("Inserting post:", post)
-
-	// Ejecuta la consulta de inserción
-	result, err := repo.db.ExecContext(ctx, "INSERT INTO posts (id, post_content, user_id) VALUES ($1, $2, $3)", post.Id, post.PostContent, post.UserId)
-	if err != nil {
-		log.Println("Error inserting post:", err)
-		return err
-	}
-
-	// Verifica cuántas filas fueron afectadas
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		log.Println("Error getting rows affected:", err)
-		return err
-	}
-
-	log.Println("Rows affected:", rowsAffected)
-	return nil
+func (repo *PostgresRepository) InsertProduct(ctx context.Context, product *models.Product) error {
+	log.Print(product)
+	// execContext permite ejecutar codigo sql
+	_, err := repo.db.ExecContext(
+		ctx,
+		"INSERT INTO products (id, name, price, user_id, description) VALUES ($1, $2, $3, $4, $5)",
+		product.Id,
+		product.Name,
+		product.Price,
+		product.User_id,
+		product.Description)
+	return err
 }
 
-func (repo *PostgresRepository) GetPostById(ctx context.Context, id string) (*models.Post, error) {
-	rows, err := repo.db.QueryContext(ctx, "SELECT id, post_content, created_at, user_id FROM posts WHERE id = $1", id)
+func (repo *PostgresRepository) UpdateProduct(ctx context.Context, product *models.Product) error {
+	_, err := repo.db.ExecContext(
+		ctx,
+		"UPDATE products SET name = $1, description = $2, price = $3 WHERE id = $4 and user_id = $5",
+		product.Name,
+		product.Description,
+		product.Price,
+		product.Id,
+		product.User_id)
+	return err
+}
+
+func (repo *PostgresRepository) DeleteProduct(ctx context.Context, id string, userId string) error {
+	_, err := repo.db.ExecContext(ctx, "DELETE FROM products WHERE id = $1 and user_id = $2", id, userId)
+	return err
+}
+
+func (repo *PostgresRepository) ListProduct(ctx context.Context, page uint64) ([]*models.Product, error) {
+	// offset es la cantidad de registros que se saltara
+	rows, err := repo.db.QueryContext(
+		ctx,
+		"SELECT id, name, price, user_id, description, created_at FROM products LIMIT $1 OFFSET $2",
+		PAGINATION_SIZE, page*PAGINATION_SIZE)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	var products []*models.Product
+	for rows.Next() {
+		var product = models.Product{}
+		if err = rows.Scan(
+			&product.Id,
+			&product.Name,
+			&product.Price,
+			&product.User_id,
+			&product.Description,
+			&product.CreatedAt); err == nil {
+			products = append(products, &product)
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+
+func (repo *PostgresRepository) GetProductById(ctx context.Context, id string) (*models.Product, error) {
+	rows, err := repo.db.QueryContext(ctx, "SELECT id, name, price, user_id, description, created_at FROM products WHERE id = $1", id)
 	log.Println(id)
 
 	defer func() {
@@ -124,11 +172,11 @@ func (repo *PostgresRepository) GetPostById(ctx context.Context, id string) (*mo
 		}
 	}()
 
-	var post = models.Post{}
+	var product = models.Product{}
 	for rows.Next() {
 		// toma rows he intenta mapear los valores de las columnas "SELECT id email FROM" dentro del modelo de datos de usuario.
-		if err = rows.Scan(&post.Id, &post.PostContent, &post.CreatedAt, &post.UserId); err == nil { // parseo datos para se adaptados al modelo post
-			return &post, nil
+		if err = rows.Scan(&product.Id, &product.Name, &product.Price, &product.User_id, &product.Description, &product.CreatedAt); err == nil { // parseo datos para se adaptados al modelo post
+			return &product, nil
 		}
 	}
 
@@ -136,58 +184,28 @@ func (repo *PostgresRepository) GetPostById(ctx context.Context, id string) (*mo
 		return nil, err
 	}
 
-	return &post, nil
-
+	return &product, nil
 }
 
-func (repo *PostgresRepository) UpdatePost(ctx context.Context, post *models.Post) error {
-	_, err := repo.db.ExecContext(ctx, "UPDATE posts SET post_content = $1 WHERE id = $2 and user_id = $3", post.PostContent, post.Id, post.UserId)
-	return err
+func (repo *PostgresRepository) InsertImage(ctx context.Context, image *models.Image) (string, error) {
+	var imageID string
+	err := repo.db.QueryRowContext(
+		ctx,
+		"INSERT INTO images (user_id, url, name, type, size) VALUES ($1,$2,$3,$4,$5) RETURNING id",
+		image.UserId,
+		image.Url,
+		image.Name,
+		image.Type,
+		image.Size).Scan(&imageID)
+	return imageID, err
 }
 
-func (repo *PostgresRepository) DeletePost(ctx context.Context, id string, userId string) error {
-	_, err := repo.db.ExecContext(ctx, "DELETE FROM posts WHERE id = $1 and user_id = $2", id, userId)
-	return err
-}
-
-func (repo *PostgresRepository) ListPost(ctx context.Context, page uint64) ([]*models.Post, error) {
-	// offset es la cantidad de registros que se saltara
-	rows, err := repo.db.QueryContext(ctx, "SELECT id, post_content, user_id, created_at FROM posts LIMIT $1 OFFSET $2", PAGINATION_SIZE, page*PAGINATION_SIZE)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		err = rows.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	var posts []*models.Post
-	for rows.Next() {
-		var post = models.Post{}
-		if err = rows.Scan(&post.Id, &post.PostContent, &post.UserId, &post.CreatedAt); err == nil {
-			posts = append(posts, &post)
-		}
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return posts, nil
-}
-
-func (repo *PostgresRepository) InsertProduct(ctx context.Context, product *models.Product) error {
-	// execContext permite ejecutar codigo sql
+func (repo *PostgresRepository) LinkProductToImage(ctx context.Context, productID string, imageID string) error {
 	_, err := repo.db.ExecContext(
 		ctx,
-		"INSERT INTO products (id, name, price, image_url, description ) VALUES ($1, $2, $3, $4, $5)",
-		product.Id,
-		product.Name,
-		product.Price,
-		product.Image_url,
-		product.Description)
+		"INSERT INTO product_images (product_id, image_id) VALUES ($1, $2)",
+		productID,
+		imageID,
+	)
 	return err
 }

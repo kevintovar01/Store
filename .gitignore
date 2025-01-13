@@ -27,3 +27,6 @@ go.work.sum
 notes.txt
 
 .vscode/
+
+handlers/post.go
+models/post.go

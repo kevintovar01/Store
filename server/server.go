@@ -6,11 +6,11 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/kevintovar01/Store/database"
 	"github.com/kevintovar01/Store/repository"
 	"github.com/kevintovar01/Store/websocket"
-	"github.com/rs/cors"
 )
 
 type Config struct {
@@ -69,8 +69,16 @@ func (b *Broker) Start(binder func(s Server, r *mux.Router)) {
 
 	// Llama a la función binder para configurar las rutas del servidor
 	binder(b, b.router)
-	// con el handler pudemos conectarnos donde queramos.
-	handler := cors.Default().Handler(b.router)
+
+	// Configura las opciones de CORS
+	corsOptions := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),                                       // Permitir cualquier origen
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}), // Métodos permitidos
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),           // Headers permitidos
+	)
+
+	// Envuelve el enrutador con el middleware CORS
+	handler := corsOptions(b.router)
 	// Crea un nuevo repositorio de PostgreSQL utilizando la URL de la base de datos de la configuración
 	repo, err := database.NewPostgresRepository(b.config.DatabaseUrl)
 	if err != nil {

@@ -60,3 +60,8 @@ la API pueda responser a ellos.
 ```bash
     go get github.com/rs/cors
 ```
+
+```bash 
+    go get -u github.com/gorilla/handlers
+
+```
