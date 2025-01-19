@@ -1,0 +1,198 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "title": "Mi API",
+      "version": "1.0.0",
+      "description": "API para gestionar productos, usuarios y websockets."
+    },
+    "host": "localhost:3000",
+    "basePath": "/",
+    "schemes": ["http"],
+    "paths": {
+      "/": {
+        "get": {
+          "summary": "Página principal",
+          "responses": {
+            "200": {
+              "description": "Respuesta exitosa"
+            }
+          }
+        }
+      },
+      "/signup": {
+        "post": {
+          "summary": "Registrar un nuevo usuario",
+          "parameters": [
+            {
+              "name": "body",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          ],
+          "responses": {
+            "201": { "description": "Usuario registrado exitosamente" },
+            "400": { "description": "Error en los datos enviados" }
+          }
+        }
+      },
+      "/login": {
+        "post": {
+          "summary": "Iniciar sesión",
+          "parameters": [
+            {
+              "name": "body",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          ],
+          "responses": {
+            "200": { "description": "Inicio de sesión exitoso" },
+            "401": { "description": "Credenciales incorrectas" }
+          }
+        }
+      },
+      "/me": {
+        "get": {
+          "summary": "Obtener información del usuario autenticado",
+          "responses": {
+            "200": { "description": "Información del usuario" },
+            "401": { "description": "Usuario no autenticado" }
+          }
+        }
+      },
+      "/products": {
+        "post": {
+          "summary": "Insertar un nuevo producto",
+          "parameters": [
+            {
+              "name": "body",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "price": { "type": "number" }
+                }
+              }
+            }
+          ],
+          "responses": {
+            "201": { "description": "Producto creado" },
+            "400": { "description": "Datos inválidos" }
+          }
+        },
+        "get": {
+          "summary": "Listar todos los productos",
+          "responses": {
+            "200": { "description": "Listado de productos" }
+          }
+        }
+      },
+      "/products/{id}": {
+        "get": {
+          "summary": "Obtener producto por ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": { "description": "Detalles del producto" },
+            "404": { "description": "Producto no encontrado" }
+          }
+        },
+        "put": {
+          "summary": "Actualizar producto",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "name": "body",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "price": { "type": "number" }
+                }
+              }
+            }
+          ],
+          "responses": {
+            "200": { "description": "Producto actualizado" },
+            "404": { "description": "Producto no encontrado" }
+          }
+        },
+        "delete": {
+          "summary": "Eliminar producto",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": { "description": "Producto eliminado" },
+            "404": { "description": "Producto no encontrado" }
+          }
+        }
+      },
+      "/image/{id}": {
+        "post": {
+          "summary": "Subir una imagen para un producto",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "name": "file",
+              "in": "formData",
+              "required": true,
+              "type": "file"
+            }
+          ],
+          "responses": {
+            "201": { "description": "Imagen subida exitosamente" },
+            "400": { "description": "Error al subir la imagen" }
+          }
+        }
+      },
+      "/ws": {
+        "get": {
+          "summary": "Conectar al WebSocket",
+          "responses": {
+            "101": { "description": "Conexión exitosa al WebSocket" }
+          }
+        }
+      }
+    }
+  }
+  
