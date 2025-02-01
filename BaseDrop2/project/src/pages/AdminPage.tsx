@@ -73,6 +73,7 @@ export const AdminPage: React.FC = () => {
       }
 
       // Convert price to number for API call
+      //cambio
       const productData = {
         ...formData,
         price: parseFloat(formData.price) || 0
@@ -145,7 +146,6 @@ export const AdminPage: React.FC = () => {
           </div>
         ))}
       </div>
-
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
