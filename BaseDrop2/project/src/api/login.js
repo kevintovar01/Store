@@ -13,7 +13,7 @@ export const login = async (email, password) => {
 
 export const getUserInfo = async (token) => {
     try {
-      const response = await axios.get('http://localhost:8080/me', {
+      const response = await axios.get('http://localhost:5050/me', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
