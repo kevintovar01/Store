@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	PAGINATION_SIZE = 27
+	PAGINATION_SIZE = 10
 )
 
 type PostgresRepository struct {
@@ -302,16 +302,6 @@ func (repo *PostgresRepository) UpdateWishCar(ctx context.Context, wishCar *mode
 		"UPDATE wishcar SET total = $1 WHERE id = $2",
 		wishCar.Total,
 		wishCar.Id)
-	return err
-}
-
-func (repo *PostgresRepository) list(ctx context.Context, productID string, imageID string) error {
-	_, err := repo.db.ExecContext(
-		ctx,
-		"INSERT INTO product_images (product_id, image_id) VALUES ($1, $2)",
-		productID,
-		imageID,
-	)
 	return err
 }
 
