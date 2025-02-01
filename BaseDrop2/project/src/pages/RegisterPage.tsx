@@ -14,12 +14,18 @@ interface RegisterFormData {
 export function RegisterPage() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormData>();
   const [userType, setUserType] = useState<'regular' | 'business'>('regular');
-  const { signUp } = useAuth();
+  const { state, signUp } = useAuth();
   const navigate = useNavigate();
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
       await signUp(data.email, data.password, userType);
+      
+      if (state.error) {
+        toast.error(state.error);
+        return;
+      }
+      
       toast.success('Registration successful!');
       if (userType === 'business') {
         navigate('/business-setup');
@@ -42,23 +48,27 @@ export function RegisterPage() {
 
         <div className="flex justify-center space-x-4 mb-8">
           <button
+            type="button"
             onClick={() => setUserType('regular')}
             className={`flex items-center px-4 py-2 rounded-lg ${
               userType === 'regular'
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 border border-gray-300'
             }`}
+            disabled={state.loading}
           >
             <UserIcon className="w-5 h-5 mr-2" />
             Regular User
           </button>
           <button
+            type="button"
             onClick={() => setUserType('business')}
             className={`flex items-center px-4 py-2 rounded-lg ${
               userType === 'business'
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 border border-gray-300'
             }`}
+            disabled={state.loading}
           >
             <Building2 className="w-5 h-5 mr-2" />
             Business
@@ -80,6 +90,7 @@ export function RegisterPage() {
                 type="email"
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
+                disabled={state.loading}
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
@@ -98,6 +109,7 @@ export function RegisterPage() {
                 type="password"
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
+                disabled={state.loading}
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
@@ -112,6 +124,7 @@ export function RegisterPage() {
                 type="password"
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Confirm password"
+                disabled={state.loading}
               />
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
@@ -122,11 +135,18 @@ export function RegisterPage() {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
+              disabled={state.loading}
             >
-              Register
+              {state.loading ? 'Registering...' : 'Register'}
             </button>
           </div>
+
+          {state.error && (
+            <p className="mt-2 text-center text-sm text-red-600">
+              {state.error}
+            </p>
+          )}
         </form>
       </div>
     </div>
