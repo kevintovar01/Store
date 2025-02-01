@@ -139,3 +139,53 @@ func AddItemHandler(s server.Server) http.HandlerFunc {
 		}
 	}
 }
+
+func ListItemHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var err error
+		// pageStr := r.URL.Query().Get("page")
+		params := mux.Vars(r)
+		//var page = uint64(0)
+		// if pageStr != "" {
+		// 	page, err = strconv.ParseUint(pageStr, 10, 64)
+		// 	if err != nil {
+		// 		http.Error(w, err.Error(), http.StatusBadRequest)
+		// 		return
+		// 	}
+		// }
+		carItem, err := repository.ListItems(r.Context(), params["id"])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		// w.header nos permite enviar una cabecera en la respuesta
+		//content-type es el tipo de contenido que se esta enviando
+		//application/json es el tipo de contenido que se esta enviando
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(carItem)
+	}
+}
+
+func RemoveItemHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+
+		var QuantityRequest *QuantityRequest
+		if err := json.NewDecoder(r.Body).Decode(&QuantityRequest); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		err := repository.RemoveItem(r.Context(), params["id"])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(&MessageResponse{
+			Message: "item removed",
+		})
+
+	}
+}
