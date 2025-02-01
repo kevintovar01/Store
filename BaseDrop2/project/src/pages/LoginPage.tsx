@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import { LogIn } from 'lucide-react';
+import { login } from '../api/login';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,10 +15,15 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    navigate('/account');
+    try {
+      const token = await login(formData.email, formData.password); // Llama a la función de login y obtiene el token
+      localStorage.setItem('authToken', token); // Guarda el token en el localStorage
+      navigate('/account');
+    } catch (error) {
+      alert('Error al iniciar sesión. Inténtalo nuevamente.'+error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

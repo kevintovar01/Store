@@ -1,49 +1,116 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Save, X } from 'lucide-react';
 import { Button } from '../components/common/Button';
+import { createProduct, listProducts, uploadProductImage } from '../api/products';
 import type { Product } from '../types';
-import { sampleProducts } from '../data/products';
+import { useNavigate } from 'react-router-dom';
 
 export const AdminPage: React.FC = () => {
-  const [products, setProducts] = useState(sampleProducts);
+  const navigate = useNavigate();
+  const [products, setProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<Omit<Product, 'id'>>({
+  const [error, setError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
-    price: 0,
-    image: '',
-    category: '',
-    stock: 0,
+    price: ''  // Changed to string to handle input properly
   });
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+      navigate('/login'); // Redirect to login if no token
+      return;
+    }
+    fetchProducts();
+  }, [navigate]);
+
+  const fetchProducts = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      const data = await listProducts(0); // Start with page 0
+      setProducts(data);
+    } catch (error) {
+      if (error?.response?.status === 401) {
+        navigate('/login');
+      }
+      setError('Failed to fetch products');
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedImage(e.target.files[0]);
+    }
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow empty string or valid numbers only
+    if (value === '' || (!isNaN(parseFloat(value)) && value.match(/^\d*\.?\d*$/))) {
+      setFormData(prev => ({ ...prev, price: value }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const token = localStorage.getItem('authToken');
 
-    const newProduct: Product = {
-      id: Date.now().toString(),
-      ...formData,
-    };
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
 
-    setProducts([...products, newProduct]);
-    setIsLoading(false);
-    setIsModalOpen(false);
-    setFormData({
-      name: '',
-      description: '',
-      price: 0,
-      image: '',
-      category: '',
-      stock: 0,
-    });
+      // Convert price to number for API call
+      const productData = {
+        ...formData,
+        price: parseFloat(formData.price) || 0
+      };
+
+      // Create product
+      const newProduct = await createProduct(productData, token);
+
+      // Upload image if selected
+      if (selectedImage && newProduct.id) {
+        await uploadProductImage(newProduct.id, selectedImage, token);
+      }
+
+      // Refresh products list
+      await fetchProducts();
+
+      // Reset form and close modal
+      setIsModalOpen(false);
+      setFormData({
+        name: '',
+        description: '',
+        price: ''
+      });
+      setSelectedImage(null);
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
+      setError(error.message || 'Failed to create product');
+      console.error('Error creating product:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto p-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
         <Button
@@ -54,20 +121,27 @@ export const AdminPage: React.FC = () => {
         </Button>
       </div>
 
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map((product) => (
           <div key={product.id} className="bg-white rounded-lg shadow-sm p-4">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-48 object-cover rounded-md mb-4"
-            />
+            {product.image_url && (
+              <img
+                src={product.image_url}
+                alt={product.name}
+                className="w-full h-48 object-cover rounded-md mb-4"
+              />
+            )}
             <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
             <div className="flex justify-between items-center text-sm text-gray-600 mb-2">
-              <span>${product.price.toFixed(2)}</span>
-              <span>{product.stock} in stock</span>
+              <span>${Number(product.price).toFixed(2)}</span>
             </div>
-            <div className="text-sm text-gray-500">{product.category}</div>
+            <p className="text-sm text-gray-500">{product.description}</p>
           </div>
         ))}
       </div>
@@ -94,7 +168,7 @@ export const AdminPage: React.FC = () => {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
@@ -106,49 +180,22 @@ export const AdminPage: React.FC = () => {
                   </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows={3}
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Price
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Stock
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.stock}
-                      onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category
+                    Price
                   </label>
                   <input
                     type="text"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    value={formData.price}
+                    onChange={handlePriceChange}
+                    placeholder="0.00"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
@@ -156,14 +203,13 @@ export const AdminPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Image URL
+                    Product Image
                   </label>
                   <input
-                    type="url"
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
                   />
                 </div>
 

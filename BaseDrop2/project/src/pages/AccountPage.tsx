@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../components/common/Button';
 import { User, Package, LogOut, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getUserInfo } from '../api/login'; // Importar la función
 
 const sampleOrders = [
   {
@@ -29,14 +30,42 @@ export const AccountPage: React.FC = () => {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
+    name: '',
+    email: '',
+    phone: '',
   });
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      // Obtener el token del localStorage
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        // Si no hay token, redirigir al login
+        navigate('/login');
+        return;
+      }
+
+      try {
+        // Obtener la información del usuario con la promesa
+        const data = await getUserInfo(token);
+        // Llenar formData con la información obtenida del backend
+        setFormData({
+          name: data.name || '',
+          email: data.email || '',
+          phone: data.phone || '', // O el campo que corresponda
+        });
+      } catch (err) {
+        console.error('Error al obtener la información del usuario:', err);
+        navigate('/login'); // Redirigir al login si hay un error
+      }
+    };
+
+    fetchUserInfo(); // Llamar a la función async
+  }, [navigate]);
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
+    // Simular llamada API
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsSaving(false);
   };
