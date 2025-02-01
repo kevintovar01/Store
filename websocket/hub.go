@@ -14,11 +14,16 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
+/*
+Hub actúa como un Mediator centralizando la comunicación entre los clientes conectados.
+También implementa elementos de Observer, ya que notifica a los clientes de eventos,
+como cuando se recibe un mensaje de difusión.
+*/
 type Hub struct {
-	clients    []*Client
-	register   chan *Client
-	unregister chan *Client
-	mutex      *sync.Mutex
+	clients    []*Client    // lista de clientes conectados (observadores)
+	register   chan *Client // canal de clientes para registrar nuevos clientes
+	unregister chan *Client // canal para desconectar clientes
+	mutex      *sync.Mutex  // Mutex garantiza concurrencia segura
 }
 
 func NewHub() *Hub {
@@ -30,6 +35,7 @@ func NewHub() *Hub {
 	}
 }
 
+// Metodo que usa el patron MEDIATOR al registrar cada cliente en el hud central.
 // ruta de manejo para los diferentes eventos de websocket
 func (hub *Hub) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	socket, err := upgrader.Upgrade(w, r, nil)
@@ -45,33 +51,49 @@ func (hub *Hub) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Run ejecuta el ciclo principal del Hud, utilizando el patron MEDIATOR.
 func (hub *Hub) Run() {
 	for {
 		select {
-		case client := <-hub.register:
+		case client := <-hub.register: // registro del cliente
 			hub.onConnect(client)
-		case client := <-hub.unregister:
+		case client := <-hub.unregister: // desconexion de cliente
 			hub.onDisconnect(client)
 		}
 	}
 }
 
+/*
+onConnect se ejecuta cuando un cliente se conecta al Hub.
+Usa Mutex para garantizar que las operaciones sobre la lista de clientes sean seguras
+en un entorno concurrente.
+*/
 func (hub *Hub) onConnect(client *Client) {
 	// client.socket.RemoteAddr() devuelve la dirección remota de la conexión del cliente.
 	log.Println("Client Connected", client.socket.RemoteAddr())
+
+	// Bloquea el acceso concurrente mientras se actualiza la lista de clientes
 	hub.mutex.Lock()
 	defer hub.mutex.Unlock()
 
+	// Asigna un identificador único al cliente basado en su dirección remota
 	client.id = client.socket.RemoteAddr().String()
 	hub.clients = append(hub.clients, client)
 }
 
+/*
+onDisconnect se ejecuta cuando un cliente se desconecta del Hub.
+También usa Mutex para garantizar seguridad concurrente al modificar la lista de clientes.
+*/
 func (hub *Hub) onDisconnect(client *Client) {
 	log.Println("Client Disconnected", client.socket.RemoteAddr())
+
+	// Cierra la conexión del cliente
 	client.socket.Close()
+
 	hub.mutex.Lock()
 	defer hub.mutex.Unlock()
-
+	// Encuentra el índice del cliente en la lista
 	i := -1
 	for index, c := range hub.clients {
 		if c.id == client.id {
@@ -87,8 +109,15 @@ func (hub *Hub) onDisconnect(client *Client) {
 	hub.clients = hub.clients[:len(hub.clients)-1]
 	// [1,2,4,5]
 
+	// Cierra el canal de salida del cliente para liberar recursos
 	close(client.outbound)
 }
+
+/*
+Broadcast envía un mensaje a todos los clientes conectados, excepto al cliente ignorado.
+Implementa el patrón Observer, ya que los clientes actúan como "observadores"
+que reciben notificaciones (mensajes) a través del Hub.
+*/
 
 // ignore es utiliza evitar que el cliente que envió el mensaje lo reciba.
 func (hub *Hub) Broadcast(message interface{}, ignore *Client) {

@@ -7,7 +7,7 @@ import (
 )
 
 // hub se encarga de mantener un registro de los clientes y de enviar mensajes a todos los clientes conectados.
-
+// patron factory
 type Client struct {
 	hub      *Hub
 	id       string
@@ -22,22 +22,6 @@ func NewClient(hub *Hub, socket *websocket.Conn) *Client {
 		outbound: make(chan []byte),
 	}
 }
-
-// Write writes a message to the client
-// func (c *Client) Write() {
-// 	for {
-// 		select {
-// 		case message, ok := <-c.outbound: // message from hub
-// 			if !ok {
-// 				// The hub closed the channel
-// 				c.socket.WriteMessage(websocket.CloseMessage, []byte{})
-// 				return
-// 			}
-// 			// escribimos el mensaje que resivimos como parametro en el socket
-// 			c.socket.WriteMessage(websocket.TextMessage, message)
-// 		}
-// 	}
-// }
 
 func (c *Client) Write() {
 	// Usamos un for range para iterar sobre los mensajes en el canal outbound

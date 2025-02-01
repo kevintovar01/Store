@@ -39,6 +39,8 @@ func (b *Broker) Hub() *websocket.Hub {
 	return b.hub
 }
 
+// patron factory method
+
 func NewServer(ctx context.Context, config *Config) (*Broker, error) {
 
 	// verification to fields are not empty

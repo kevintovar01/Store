@@ -209,3 +209,145 @@ func (repo *PostgresRepository) LinkProductToImage(ctx context.Context, productI
 	)
 	return err
 }
+
+func (repo *PostgresRepository) CreateWishCar(ctx context.Context, whishCar *models.Car) error {
+	_, err := repo.db.ExecContext(
+		ctx,
+		"INSERT INTO wishcar (id, user_id, total) VALUES ($1, $2, $3) RETURNING id",
+		whishCar.Id,
+		whishCar.UserId,
+		whishCar.Total)
+	return err
+}
+
+func (repo *PostgresRepository) AddItem(ctx context.Context, carItem *models.CarItem) error {
+	_, err := repo.db.ExecContext(
+		ctx,
+		"INSERT INTO car_item (car_id, product_id, quantity) VALUES ($1, $2, $3)",
+		carItem.CarId,
+		carItem.ProductId,
+		carItem.Quantity)
+	return err
+}
+
+func (repo *PostgresRepository) RemoveItem(ctx context.Context, productId string) error {
+	_, err := repo.db.ExecContext(ctx, "DELETE FROM car_item WHERE product_id = $1", productId)
+	return err
+}
+
+func (repo *PostgresRepository) UpdateQuantity(ctx context.Context, productId string, quantity int) error {
+	_, err := repo.db.ExecContext(ctx, "UPDATE car_item SET quantity = $1 WHERE product_id = $2", quantity, productId)
+	return err
+}
+
+func (repo *PostgresRepository) GetItem(ctx context.Context, productId string, carId string) (*models.CarItem, error) {
+	rows, err := repo.db.QueryContext(
+		ctx,
+		"SELECT id, car_id, product_id, quantity FROM car_item WHERE product_id = $1 AND car_id = $2",
+		productId,
+		carId)
+
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	var carItem = models.CarItem{}
+	for rows.Next() {
+		if err = rows.Scan(&carItem.Id, &carItem.CarId, &carItem.ProductId, &carItem.Quantity); err == nil {
+			return &carItem, nil
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &carItem, nil
+}
+
+func (repo *PostgresRepository) GetWishCarById(ctx context.Context, userId string) (*models.Car, error) {
+	rows, err := repo.db.QueryContext(
+		ctx,
+		"SELECT id, user_id, total, created_at FROM wishcar WHERE user_id = $1",
+		userId)
+
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	var wishcar = models.Car{}
+	for rows.Next() {
+		if err = rows.Scan(&wishcar.Id, &wishcar.UserId, &wishcar.Total, &wishcar.CreatedAt); err == nil {
+			return &wishcar, nil
+		}
+
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &wishcar, nil
+
+}
+
+func (repo *PostgresRepository) UpdateWishCar(ctx context.Context, wishCar *models.Car) error {
+	_, err := repo.db.ExecContext(
+		ctx,
+		"UPDATE wishcar SET total = $1 WHERE id = $2",
+		wishCar.Total,
+		wishCar.Id)
+	return err
+}
+
+func (repo *PostgresRepository) list(ctx context.Context, productID string, imageID string) error {
+	_, err := repo.db.ExecContext(
+		ctx,
+		"INSERT INTO product_images (product_id, image_id) VALUES ($1, $2)",
+		productID,
+		imageID,
+	)
+	return err
+}
+
+func (repo *PostgresRepository) ListItems(ctx context.Context, carId string) ([]*models.CarItem, error) {
+	// offset es la cantidad de registros que se saltara
+	rows, err := repo.db.QueryContext(
+		ctx,
+		"SELECT id, car_id, product_id, quantity FROM car_item WHERE car_id = $1",
+		carId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	var carItems []*models.CarItem
+	for rows.Next() {
+		var carItem = models.CarItem{}
+		if err = rows.Scan(
+			&carItem.Id,
+			&carItem.CarId,
+			&carItem.ProductId,
+			&carItem.Quantity); err == nil {
+			carItems = append(carItems, &carItem)
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return carItems, nil
+}

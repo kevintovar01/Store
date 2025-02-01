@@ -52,3 +52,25 @@ CREATE TABLE product_images (
 
     PRIMARY KEY (product_id, image_id)
 );
+
+DROP TABLE IF EXISTS wishcar; 
+
+CREATE TABLE wishcar(
+    id VARCHAR(32) PRIMARY KEY ,
+    user_id VARCHAR(32) NOT NULL,
+    total DECIMAL(10,2 ) DEFAULT 0.00,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+DROP TABLE IF EXISTS car_item;
+
+
+CREATE TABLE car_item (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    car_id VARCHAR(32) NOT NULL,
+    product_id VARCHAR(32) NOT NULL,
+    quantity INT NOT NULL CHECK (quantity > 0),
+    FOREIGN KEY (car_id) REFERENCES wishcar(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products ON DELETE CASCADE
+);
