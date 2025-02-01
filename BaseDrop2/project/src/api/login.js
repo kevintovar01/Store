@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export const login = async (email, password) => {
   try {
-    const response = await axios.post('http://localhost:8080/login', { email, password });
+    const response = await axios.post('http://localhost:5050/login', { email, password });
     const token = response.data.token; // Asumimos que el token viene en la propiedad 'token' de la respuesta
     return token;
   } catch (error) {
