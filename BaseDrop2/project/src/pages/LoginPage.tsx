@@ -18,7 +18,7 @@ export const LoginPage: React.FC = () => {
     try {
       const token = await login(formData.email, formData.password); // Llama a la función de login y obtiene el token
       localStorage.setItem('authToken', token); // Guarda el token en el localStorage
-      navigate('/account');
+      navigate('/home');
     } catch (error) {
       alert('Error al iniciar sesión. Inténtalo nuevamente.'+error);
     } finally {
