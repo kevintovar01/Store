@@ -1,45 +1,110 @@
-import React, { useState } from 'react';
+import React, { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { toast } from 'react-hot-toast';
 import { useAuth } from '../store/AuthContext';
 import { Building2, User as UserIcon } from 'lucide-react';
 
-interface RegisterFormData {
-  email: string;
-  password: string;
-  confirmPassword: string;
+interface FormErrors {
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 export function RegisterPage() {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormData>();
   const [userType, setUserType] = useState<'regular' | 'business'>('regular');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  
   const { state, signUp } = useAuth();
   const navigate = useNavigate();
 
-  const onSubmit = async (data: RegisterFormData) => {
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    
+    // Validar email
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)) {
+      newErrors.email = 'Invalid email address';
+    }
+
+    // Validar password
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    }
+
+    // Validar confirmación de password
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     try {
-      await signUp(data.email, data.password, userType);
+      await signUp(formData.email, formData.password, userType);
       
       if (state.error) {
-        toast.error(state.error);
+        showNotification('error', state.error);
         return;
       }
       
-      toast.success('Registration successful!');
+      showNotification('success', 'Registration successful!');
+      
       if (userType === 'business') {
         navigate('/business-setup');
       } else {
         navigate('/');
       }
     } catch (error) {
-      toast.error('Registration failed. Please try again.');
+      showNotification('error', 'Registration failed. Please try again.');
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
   };
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {notification && (
+          <div
+            className={`p-4 rounded-md ${
+              notification.type === 'success' 
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-700'
+            }`}
+          >
+            {notification.message}
+          </div>
+        )}
+
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create your account
@@ -75,59 +140,51 @@ export function RegisterPage() {
           </button>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email" className="sr-only">Email address</label>
               <input
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address'
-                  }
-                })}
+                name="email"
                 type="email"
+                value={formData.email}
+                onChange={handleInputChange}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 disabled={state.loading}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
               )}
             </div>
             <div>
               <label htmlFor="password" className="sr-only">Password</label>
               <input
-                {...register('password', {
-                  required: 'Password is required',
-                  minLength: {
-                    value: 8,
-                    message: 'Password must be at least 8 characters'
-                  }
-                })}
+                name="password"
                 type="password"
+                value={formData.password}
+                onChange={handleInputChange}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
                 disabled={state.loading}
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
               )}
             </div>
             <div>
               <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
               <input
-                {...register('confirmPassword', {
-                  validate: value => value === watch('password') || 'Passwords do not match'
-                })}
+                name="confirmPassword"
                 type="password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Confirm password"
                 disabled={state.loading}
               />
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
               )}
             </div>
           </div>
@@ -141,12 +198,6 @@ export function RegisterPage() {
               {state.loading ? 'Registering...' : 'Register'}
             </button>
           </div>
-
-          {state.error && (
-            <p className="mt-2 text-center text-sm text-red-600">
-              {state.error}
-            </p>
-          )}
         </form>
       </div>
     </div>
