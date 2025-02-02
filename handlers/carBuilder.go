@@ -62,7 +62,6 @@ func (cb *carBuilder) AddProduct(product_id string, quantity int) error {
 			return err
 		}
 	} else {
-		carItem.Quantity += quantity
 		err = repository.UpdateQuantity(cb.r.Context(), product_id, quantity)
 		if err != nil {
 			return err

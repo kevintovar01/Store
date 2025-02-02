@@ -41,19 +41,24 @@ func BindRoutes(s server.Server, r *mux.Router) {
 	// Le estamos diciendo a nuestro router, que para cada una de esas rutas use el middleware CheckAuthMiddleware
 	r.Use(middleware.CheckAuthMiddleware(s))
 
+	// url for the users
 	r.HandleFunc("/", handlers.HomeHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/signup", handlers.SingUpHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/login", handlers.LoginHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/me", handlers.MyHandler(s)).Methods(http.MethodGet)
+	// url for the products
 	r.HandleFunc("/products", handlers.InsertProductHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/image/{id}", handlers.InsertImageHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/products/{id}", handlers.GetProductByIdHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/products/{id}", handlers.UpdateProductHandler(s)).Methods(http.MethodPut)
 	r.HandleFunc("/products/{id}", handlers.DeleteProductHandler(s)).Methods(http.MethodDelete)
 	r.HandleFunc("/products", handlers.ListProductHandler(s)).Methods(http.MethodGet)
+	// urls for the carwish
 	r.HandleFunc("/createCar", handlers.CreateWishCarHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/addItem/{id}", handlers.AddItemHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/wishcar", handlers.GetWishCarByIdHandler(s)).Methods(http.MethodGet)
+	r.HandleFunc("/wishcar/{id}", handlers.ListItemHandler(s)).Methods(http.MethodGet)
+	r.HandleFunc("/wishcar/{id}", handlers.RemoveItemHandler(s)).Methods(http.MethodDelete)
 	// el handler de websocket se encarga de manejar las conexiones de websocket
 	r.HandleFunc("/ws", s.Hub().HandleWebSocket)
 

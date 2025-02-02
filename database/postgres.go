@@ -236,7 +236,7 @@ func (repo *PostgresRepository) RemoveItem(ctx context.Context, productId string
 }
 
 func (repo *PostgresRepository) UpdateQuantity(ctx context.Context, productId string, quantity int) error {
-	_, err := repo.db.ExecContext(ctx, "UPDATE car_item SET quantity = $1 WHERE product_id = $2", quantity, productId)
+	_, err := repo.db.ExecContext(ctx, "UPDATE car_item SET quantity = quantity + $1 WHERE product_id = $2", quantity, productId)
 	return err
 }
 
