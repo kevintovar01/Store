@@ -168,13 +168,8 @@ func ListItemHandler(s server.Server) http.HandlerFunc {
 
 func RemoveItemHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		params := mux.Vars(r)
 
-		var QuantityRequest *QuantityRequest
-		if err := json.NewDecoder(r.Body).Decode(&QuantityRequest); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+		params := mux.Vars(r)
 
 		err := repository.RemoveItem(r.Context(), params["id"])
 		if err != nil {
