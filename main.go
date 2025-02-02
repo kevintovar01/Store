@@ -59,7 +59,6 @@ func BindRoutes(s server.Server, r *mux.Router) {
 	r.HandleFunc("/wishcar", handlers.GetWishCarByIdHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/wishcar/{id}", handlers.ListItemHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/wishcar/{id}", handlers.RemoveItemHandler(s)).Methods(http.MethodDelete)
-	r.HandleFunc("/wishcar/{id}", handlers.UpdateQuantityHandler(s)).Methods(http.MethodPut)
 	// el handler de websocket se encarga de manejar las conexiones de websocket
 	r.HandleFunc("/ws", s.Hub().HandleWebSocket)
 
