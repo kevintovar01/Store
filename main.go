@@ -63,3 +63,7 @@ func BindRoutes(s server.Server, r *mux.Router) {
 	r.HandleFunc("/ws", s.Hub().HandleWebSocket)
 
 }
+
+// "/wishcar/{id}", handlers.RemoveItemHandler(s) el id es el del producto
+// "/wishcar/{id}", handlers.ListItemHandler(s) el id es el del carrito
+//"/addItem/{id}", handlers.AddItemHandler(s) el id es el del producto
