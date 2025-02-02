@@ -21,9 +21,6 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
-            <Link to="/store" className="text-gray-700 hover:text-blue-600 px-3 py-2">
-              Store
-            </Link>
             <Link to="/products" className="text-gray-700 hover:text-blue-600 px-3 py-2">
               Products
             </Link>
@@ -92,12 +89,6 @@ export const Navbar: React.FC = () => {
       {isMenuOpen && (
         <div className="sm:hidden">
           <div className="pt-2 pb-3 space-y-1">
-            <Link
-              to="/store"
-              className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600"
-            >
-              Store
-            </Link>
             <Link
               to="/products"
               className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600"

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useCart } from '../store/CartContext';
 import { Button } from '../components/common/Button';
-import { Trash2, Plus, Minus, ShoppingBag, CreditCard } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, CreditCard, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
 
 export const CartPage: React.FC = () => {
   const { state, dispatch } = useCart();
+  const { isAuthenticated } = state; // Obtener isAuthenticated desde el estado del carrito
   const navigate = useNavigate();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
@@ -24,6 +26,12 @@ export const CartPage: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 1500));
     dispatch({ type: 'CLEAR_CART' });
     navigate('/account');
+  };
+
+  const handleLoginRedirect = () => {
+    // Guardamos la URL actual para redirigir de vuelta después del login
+    sessionStorage.setItem('returnUrl', '/cart');
+    navigate('/login');
   };
 
   if (state.items.length === 0) {
@@ -91,14 +99,24 @@ export const CartPage: React.FC = () => {
           <span>Total</span>
           <span>${state.total.toFixed(2)}</span>
         </div>
-        <Button
-          className="w-full"
-          onClick={handleCheckout}
-          isLoading={isCheckingOut}
-          icon={<CreditCard className="w-5 h-5" />}
-        >
-          Proceed to Checkout
-        </Button>
+        {isAuthenticated ? (
+          <Button
+            className="w-full"
+            onClick={handleCheckout}
+            isLoading={isCheckingOut}
+            icon={<CreditCard className="w-5 h-5" />}
+          >
+            Proceed to Checkout
+          </Button>
+        ) : (
+          <Button
+            className="w-full"
+            onClick={handleLoginRedirect}
+            icon={<LogIn className="w-5 h-5" />}
+          >
+            Sign in to Checkout
+          </Button>
+        )}
       </div>
     </div>
   );

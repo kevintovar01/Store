@@ -4,13 +4,15 @@ import type { CartItem, Product } from '../types';
 interface CartState {
   items: CartItem[];
   total: number;
+  isAuthenticated: boolean;
 }
 
 type CartAction =
   | { type: 'ADD_ITEM'; payload: Product }
   | { type: 'REMOVE_ITEM'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
-  | { type: 'CLEAR_CART' };
+  | { type: 'CLEAR_CART' }
+  | { type: 'SET_AUTHENTICATION'; payload: boolean };
 
 const CartContext = createContext<{
   state: CartState;
@@ -61,16 +63,16 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       };
     }
     case 'CLEAR_CART':
-      return { items: [], total: 0 };
+      return { ...state, items: [], total: 0 };
+    case 'SET_AUTHENTICATION':
+      return { ...state, isAuthenticated: action.payload };
     default:
       return state;
   }
 };
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [state, dispatch] = useReducer(cartReducer, { items: [], total: 0 });
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state, dispatch] = useReducer(cartReducer, { items: [], total: 0, isAuthenticated: false });
 
   return (
     <CartContext.Provider value={{ state, dispatch }}>

@@ -16,11 +16,11 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const token = await login(formData.email, formData.password); // Llama a la función de login y obtiene el token
-      localStorage.setItem('authToken', token); // Guarda el token en el localStorage
+      const token = await login(formData.email, formData.password);
+      localStorage.setItem('authToken', token);
       navigate('/home');
     } catch (error) {
-      alert('Error al iniciar sesión. Inténtalo nuevamente.'+error);
+      alert('Error al iniciar sesión. Inténtalo nuevamente.' + error);
     } finally {
       setIsLoading(false);
     }
@@ -65,6 +65,17 @@ export const LoginPage: React.FC = () => {
           Login
         </Button>
       </form>
+      <div className="mt-4 text-center">
+        <p className="text-sm text-gray-600">
+          ¿No tienes cuenta?{' '}
+          <span
+            className="text-blue-500 cursor-pointer hover:underline"
+            onClick={() => navigate('/register')}
+          >
+            Regístrate aquí
+          </span>
+        </p>
+      </div>
     </div>
   );
 };

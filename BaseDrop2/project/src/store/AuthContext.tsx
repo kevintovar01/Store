@@ -19,12 +19,15 @@ type AuthAction =
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SIGN_OUT' };
 
-interface AuthContextType {
-  state: AuthState;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userType: string) => Promise<void>;
-  signOut: () => Promise<void>;
-}
+  interface AuthContextType {
+    state: AuthState;
+    user: User | null; // Agregamos acceso directo a user
+    signIn: (email: string, password: string) => Promise<void>;
+    signUp: (email: string, password: string, userType: string) => Promise<void>;
+    signOut: () => Promise<void>;
+  }
+  
+
 
 // Reducer
 const authReducer = (state: AuthState, action: AuthAction): AuthState => {
@@ -138,7 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ state, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ state, user: state.user, signIn, signUp, signOut }}>
+
       {children}
     </AuthContext.Provider>
   );
