@@ -12,7 +12,8 @@ type CartAction =
   | { type: 'REMOVE_ITEM'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'CLEAR_CART' }
-  | { type: 'SET_AUTHENTICATION'; payload: boolean };
+  | { type: 'SET_AUTHENTICATION'; payload: boolean }
+  | { type: 'SET_CART_ITEMS'; payload: CartItem[] };  // Añadir esta acción
 
 const CartContext = createContext<{
   state: CartState;

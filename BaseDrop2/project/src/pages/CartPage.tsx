@@ -1,35 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '../store/CartContext';
 import { Button } from '../components/common/Button';
 import { Trash2, Plus, Minus, ShoppingBag, CreditCard, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import { getWishCarById, addItemToCar, listItemsInCar, removeItemFromCar } from '../api/wishcar';
 
 export const CartPage: React.FC = () => {
   const { state, dispatch } = useCart();
-  const { isAuthenticated } = state; // Obtener isAuthenticated desde el estado del carrito
+  const { isAuthenticated } = state;
   const navigate = useNavigate();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const token = localStorage.getItem('authToken');
+  const [cartId, setCartId] = useState<string | null>(null);
 
-  const updateQuantity = (id: string, quantity: number) => {
-    if (quantity < 1) return;
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
+  useEffect(() => {
+    const fetchCart = async () => {
+      if (token) {
+        try {
+          const cart = await getWishCarById(token);
+          setCartId(cart.id);
+          dispatch({ type: 'SET_CART_ITEMS', payload: cart.items });  // Usar SET_CART_ITEMS
+        } catch (error) {
+          console.error('Error fetching cart:', error);
+        }
+      }
+    };
+    fetchCart();
+  }, [token, dispatch]);
+
+  const updateQuantity = async (id: string, quantity: number) => {
+    if (quantity < 1 || !cartId || !token) return;
+    try {
+      await addItemToCar(cartId, quantity, token);
+      const updatedCart = await listItemsInCar(cartId, token);
+      dispatch({ type: 'SET_CART_ITEMS', payload: updatedCart.items });  // Usar SET_CART_ITEMS
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+    }
   };
 
-  const removeItem = (id: string) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: id });
+  const removeItem = async (id: string) => {
+    if (!token) return;
+    try {
+      await removeItemFromCar(id, token);
+      if (cartId) {
+        const updatedCart = await listItemsInCar(cartId, token);
+        dispatch({ type: 'SET_CART_ITEMS', payload: updatedCart.items });  // Usar SET_CART_ITEMS
+      }
+    } catch (error) {
+      console.error('Error removing item:', error);
+    }
   };
 
   const handleCheckout = async () => {
     setIsCheckingOut(true);
-    // Simulate checkout process
     await new Promise(resolve => setTimeout(resolve, 1500));
     dispatch({ type: 'CLEAR_CART' });
     navigate('/account');
   };
 
   const handleLoginRedirect = () => {
-    // Guardamos la URL actual para redirigir de vuelta después del login
     sessionStorage.setItem('returnUrl', '/cart');
     navigate('/login');
   };
@@ -48,72 +78,43 @@ export const CartPage: React.FC = () => {
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
-      
       <div className="space-y-6">
         {state.items.map((item) => (
           <div key={item.id} className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-sm">
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-24 h-24 object-cover rounded-md"
-            />
-            
+            <img src={item.image} alt={item.name} className="w-24 h-24 object-cover rounded-md" />
             <div className="flex-1">
               <h3 className="font-semibold text-gray-900">{item.name}</h3>
               <p className="text-gray-600">${item.price.toFixed(2)}</p>
             </div>
-
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                className="p-1 hover:bg-gray-100 rounded"
-                disabled={item.quantity <= 1}
-              >
+              <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-1 hover:bg-gray-100 rounded" disabled={item.quantity <= 1}>
                 <Minus className="w-4 h-4" />
               </button>
               <span className="w-8 text-center">{item.quantity}</span>
-              <button
-                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                className="p-1 hover:bg-gray-100 rounded"
-                disabled={item.quantity >= item.stock}
-              >
+              <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-1 hover:bg-gray-100 rounded" disabled={item.quantity >= item.stock}>
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-
             <div className="text-right min-w-[100px]">
               <div className="font-semibold">${(item.price * item.quantity).toFixed(2)}</div>
-              <button
-                onClick={() => removeItem(item.id)}
-                className="text-red-500 hover:text-red-600"
-              >
+              <button onClick={() => removeItem(item.id)} className="text-red-500 hover:text-red-600">
                 <Trash2 className="w-5 h-5" />
               </button>
             </div>
           </div>
         ))}
       </div>
-
       <div className="mt-8 bg-white p-6 rounded-lg shadow-sm">
         <div className="flex justify-between text-lg font-semibold mb-4">
           <span>Total</span>
           <span>${state.total.toFixed(2)}</span>
         </div>
         {isAuthenticated ? (
-          <Button
-            className="w-full"
-            onClick={handleCheckout}
-            isLoading={isCheckingOut}
-            icon={<CreditCard className="w-5 h-5" />}
-          >
+          <Button className="w-full" onClick={handleCheckout} isLoading={isCheckingOut} icon={<CreditCard className="w-5 h-5" />}>
             Proceed to Checkout
           </Button>
         ) : (
-          <Button
-            className="w-full"
-            onClick={handleLoginRedirect}
-            icon={<LogIn className="w-5 h-5" />}
-          >
+          <Button className="w-full" onClick={handleLoginRedirect} icon={<LogIn className="w-5 h-5" />}>
             Sign in to Checkout
           </Button>
         )}
