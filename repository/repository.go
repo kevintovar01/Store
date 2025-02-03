@@ -17,9 +17,10 @@ type Repository interface {
 	GetProductById(ctx context.Context, id string) (*models.Product, error)
 	UpdateProduct(ctx context.Context, product *models.Product) error
 	DeleteProduct(ctx context.Context, id string, userId string) error
-	ListProduct(ctx context.Context, page uint64) ([]*models.Product, error)
+	ListProduct(ctx context.Context, page uint64) ([]*models.ProductList, error)
 	InsertImage(ctx context.Context, image *models.Image) (string, error)
 	LinkProductToImage(ctx context.Context, productID string, imageID string) error
+	GetImageById(ctx context.Context, id string) (*models.Image, error)
 
 	// Crud for wishcar
 	CreateWishCar(ctx context.Context, wishCar *models.Car) error
@@ -64,7 +65,7 @@ func UpdateProduct(ctx context.Context, product *models.Product) error {
 	return implementation.UpdateProduct(ctx, product)
 }
 
-func ListProduct(ctx context.Context, page uint64) ([]*models.Product, error) {
+func ListProduct(ctx context.Context, page uint64) ([]*models.ProductList, error) {
 	return implementation.ListProduct(ctx, page)
 }
 
@@ -78,6 +79,10 @@ func InsertImage(ctx context.Context, image *models.Image) (string, error) {
 
 func LinkProductToImage(ctx context.Context, productID string, imageID string) error {
 	return implementation.LinkProductToImage(ctx, productID, imageID)
+}
+
+func GetImageById(ctx context.Context, id string) (*models.Image, error) {
+	return implementation.GetImageById(ctx, id)
 }
 
 // functions from wishcar

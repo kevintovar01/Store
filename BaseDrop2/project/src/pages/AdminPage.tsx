@@ -129,22 +129,29 @@ export const AdminPage: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((product) => (
-          <div key={product.id} className="bg-white rounded-lg shadow-sm p-4">
-            {product.image_url && (
-              <img
-                src={product.image_url}
-                alt={product.name}
-                className="w-full h-48 object-cover rounded-md mb-4"
-              />
-            )}
-            <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
-            <div className="flex justify-between items-center text-sm text-gray-600 mb-2">
-              <span>${Number(product.price).toFixed(2)}</span>
+        {products.map((product) => {
+            const baseUrl = "http://localhost:5050";
+            const imageUrl = `${baseUrl}${product.url}`;
+            product.server_image_url = imageUrl;
+  
+            return(
+            <div key={product.id} className="bg-white rounded-lg shadow-sm p-4">
+              {product.url && (
+                <img
+                  src={imageUrl}
+                  alt={product.name}
+                  className="w-full h-48 object-cover rounded-md mb-4"
+                />
+              )}
+              <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
+              <div className="flex justify-between items-center text-sm text-gray-600 mb-2">
+                <span>${Number(product.price).toFixed(2)}</span>
+              </div>
+              <p className="text-sm text-gray-500">{product.description}</p>
             </div>
-            <p className="text-sm text-gray-500">{product.description}</p>
-          </div>
-        ))}
+            );
+          
+        })}
       </div>
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

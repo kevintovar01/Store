@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	PAGINATION_SIZE = 10
+	PAGINATION_SIZE = 34
 )
 
 type PostgresRepository struct {
@@ -122,12 +122,25 @@ func (repo *PostgresRepository) DeleteProduct(ctx context.Context, id string, us
 	return err
 }
 
-func (repo *PostgresRepository) ListProduct(ctx context.Context, page uint64) ([]*models.Product, error) {
+func (repo *PostgresRepository) ListProduct(ctx context.Context, page uint64) ([]*models.ProductList, error) {
 	// offset es la cantidad de registros que se saltara
 	rows, err := repo.db.QueryContext(
 		ctx,
-		"SELECT id, name, price, user_id, description, created_at FROM products LIMIT $1 OFFSET $2",
-		PAGINATION_SIZE, page*PAGINATION_SIZE)
+		`SELECT 
+			p.id, 
+			p.name, 
+			p.price, 
+			p.user_id, 
+			p.description, 
+			p.created_at,
+			COALESCE(STRING_AGG(i.url, ', '), '/uploads/default/product.jpg') AS image_urls
+		 FROM products p
+		 LEFT JOIN product_images pi ON p.id = pi.product_id
+		 LEFT JOIN images i ON pi.image_id = i.id
+		 GROUP BY p.id
+		 LIMIT $1 OFFSET $2`,
+		PAGINATION_SIZE, page*PAGINATION_SIZE,
+	)
 
 	if err != nil {
 		return nil, err
@@ -140,16 +153,18 @@ func (repo *PostgresRepository) ListProduct(ctx context.Context, page uint64) ([
 		}
 	}()
 
-	var products []*models.Product
+	var products []*models.ProductList
 	for rows.Next() {
-		var product = models.Product{}
+		var product = models.ProductList{}
 		if err = rows.Scan(
 			&product.Id,
 			&product.Name,
 			&product.Price,
 			&product.User_id,
 			&product.Description,
-			&product.CreatedAt); err == nil {
+			&product.CreatedAt,
+			&product.Url); err == nil {
+
 			products = append(products, &product)
 		}
 	}
@@ -189,6 +204,7 @@ func (repo *PostgresRepository) GetProductById(ctx context.Context, id string) (
 
 func (repo *PostgresRepository) InsertImage(ctx context.Context, image *models.Image) (string, error) {
 	var imageID string
+	log.Print("imagen creada", image)
 	err := repo.db.QueryRowContext(
 		ctx,
 		"INSERT INTO images (user_id, url, name, type, size) VALUES ($1,$2,$3,$4,$5) RETURNING id",
@@ -208,6 +224,44 @@ func (repo *PostgresRepository) LinkProductToImage(ctx context.Context, productI
 		imageID,
 	)
 	return err
+}
+
+func (repo *PostgresRepository) GetImageById(ctx context.Context, productId string) (*models.Image, error) {
+	rows, err := repo.db.QueryContext(ctx, "SELECT product_id, image_id, created_at FROM product_images WHERE product_id = $1", productId)
+
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	var imageLink = models.ImageLink{}
+
+	for rows.Next() {
+		// toma rows he intenta mapear los valores de las columnas "SELECT id email FROM" dentro del modelo de datos de usuario.
+		if err = rows.Scan(&imageLink.ProductId, &imageLink.ImageId, &imageLink.CreatedAt); err != nil { // parseo datos para se adaptados al modelo post
+			return nil, err
+		}
+
+	}
+
+	rows, err = repo.db.QueryContext(ctx, "SELECT user_id, url, name, type, size, created_at FROM images WHERE id = $1", imageLink.ImageId)
+
+	var image = models.Image{}
+	for rows.Next() {
+		// toma rows he intenta mapear los valores de las columnas "SELECT id email FROM" dentro del modelo de datos de usuario.
+		if err = rows.Scan(&image.UserId, &image.Url, &image.Name, &image.Type, &image.Size, &image.CreatedAt); err == nil { // parseo datos para se adaptados al modelo post
+			return &image, nil
+		}
+
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &image, nil
 }
 
 func (repo *PostgresRepository) CreateWishCar(ctx context.Context, whishCar *models.Car) error {

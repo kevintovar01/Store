@@ -5,6 +5,7 @@ import { Trash2, Plus, Minus, ShoppingBag, CreditCard, LogIn } from 'lucide-reac
 import { useNavigate } from 'react-router-dom';
 
 
+
 export const CartPage: React.FC = () => {
   const { state, dispatch } = useCart();
   const { isAuthenticated } = state; // Obtener isAuthenticated desde el estado del carrito
@@ -45,6 +46,8 @@ export const CartPage: React.FC = () => {
     );
   }
 
+
+
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
@@ -53,7 +56,7 @@ export const CartPage: React.FC = () => {
         {state.items.map((item) => (
           <div key={item.id} className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-sm">
             <img
-              src={item.image}
+              src={item.server_image_url}
               alt={item.name}
               className="w-24 h-24 object-cover rounded-md"
             />

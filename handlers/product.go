@@ -35,6 +35,16 @@ type ProductResponse struct {
 	Price float64 `json:"price"`
 }
 
+type GetProductResponse struct {
+	Id          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Price       float64   `json:"price"`
+	User_id     string    `json:"user_id"`
+	CreatedAt   time.Time `json:"created_at"`
+	Url         string    `json:"url"`
+}
+
 func InsertProductHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := middleware.TokenAuth(s, w, *r)
@@ -142,8 +152,22 @@ func GetProductByIdHandler(s server.Server) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		image, err := repository.GetImageById(r.Context(), params["id"])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "aplication/json")
-		json.NewEncoder(w).Encode(product)
+		json.NewEncoder(w).Encode(&GetProductResponse{
+			Id:          product.Id,
+			Name:        product.Name,
+			Description: product.Description,
+			Price:       product.Price,
+			User_id:     product.User_id,
+			CreatedAt:   product.CreatedAt,
+			Url:         image.Url})
 	}
 }
 
@@ -257,6 +281,7 @@ func InsertImageHandler(s server.Server) http.HandlerFunc {
 				return
 			}
 			log.Println(params["id"])
+			log.Println("imageID from insert: ", imageID)
 			err = repository.LinkProductToImage(r.Context(), params["id"], imageID)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
