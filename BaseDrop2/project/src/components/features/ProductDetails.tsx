@@ -13,8 +13,14 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ product, onClose
   const { dispatch } = useCart();
 
   const addToCart = () => {
-    dispatch({ type: 'ADD_ITEM', payload: product });
+    
+    dispatch({ type: 'ADD_ITEM', payload: product});
   };
+
+  const baseUrl = "http://localhost:5050";
+  const imageUrl = `${baseUrl}${product.url}`;
+  product.server_image_url = imageUrl;
+  
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -28,7 +34,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ product, onClose
           </button>
           
           <img
-            src={product.image}
+            src={imageUrl}
             alt={product.name}
             className="w-full h-64 object-cover"
           />

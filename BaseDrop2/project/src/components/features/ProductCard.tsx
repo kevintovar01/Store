@@ -10,13 +10,22 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  console.log(product);
   const { dispatch } = useCart();
   const [showDetails, setShowDetails] = useState(false);
 
   const addToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    dispatch({ type: 'ADD_ITEM', payload: product });
+    
+    dispatch({ type: 'ADD_ITEM', payload: product});  
   };
+
+  const baseUrl = "http://localhost:5050";
+  const imageUrl = `${baseUrl}${product.url}`;
+  product.server_image_url = imageUrl;
+  
+
+
 
   return (
     <>
@@ -26,7 +35,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       >
         <div className="relative pb-[56.25%]">
           <img
-            src={product.image}
+            src={imageUrl}
             alt={product.name}
             className="absolute top-0 left-0 w-full h-full object-cover"
             loading="lazy"

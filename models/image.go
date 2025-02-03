@@ -10,3 +10,9 @@ type Image struct {
 	Size      int64     `json:"size"`
 	CreatedAt time.Time `json:"creared_at"`
 }
+
+type ImageLink struct {
+	ProductId string    `json:"product_id"`
+	ImageId   string    `json:"image_id"`
+	CreatedAt time.Time `json:"created_at"`
+}

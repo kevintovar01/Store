@@ -1,0 +1,8 @@
+# Ignorar todo en el directorio actual
+*
+
+# Excluir la carpeta "default" de ser ignorada
+!default/
+
+# Asegurar que el contenido de "default/" no sea ignorado
+!default/**

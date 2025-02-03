@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-
+	// Inicia el servidor en el puerto 5050
 	if err := godotenv.Load(".env"); err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -37,6 +37,11 @@ func main() {
 
 func BindRoutes(s server.Server, r *mux.Router) {
 	// api := r.PathPrefix("/api/v1").Subrouter()
+	// r es tu *mux.Router
+	r.PathPrefix("/uploads/").Handler(
+		http.StripPrefix("/uploads/",
+			http.FileServer(http.Dir("./uploads"))),
+	)
 
 	// Le estamos diciendo a nuestro router, que para cada una de esas rutas use el middleware CheckAuthMiddleware
 	r.Use(middleware.CheckAuthMiddleware(s))
@@ -59,6 +64,7 @@ func BindRoutes(s server.Server, r *mux.Router) {
 	r.HandleFunc("/wishcar", handlers.GetWishCarByIdHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/wishcar/{id}", handlers.ListItemHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/wishcar/{id}", handlers.RemoveItemHandler(s)).Methods(http.MethodDelete)
+
 	// el handler de websocket se encarga de manejar las conexiones de websocket
 	r.HandleFunc("/ws", s.Hub().HandleWebSocket)
 
