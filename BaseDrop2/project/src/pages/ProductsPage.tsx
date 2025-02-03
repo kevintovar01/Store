@@ -88,7 +88,6 @@ export const ProductsPage = () => {
       )}
 
       <footer className="mt-12 text-center text-gray-600">
-        <p>&copy; 2024 ShopDrop. All rights reserved.</p>
       </footer>
     </div>
   );
