@@ -1,21 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { ProductCard } from "../components/features/ProductCard";
-import { Search, Filter, ShoppingCart } from "lucide-react";
+import { Search, Filter, ShoppingCart, Package } from "lucide-react";
 import { listProducts } from "../api/products";
 
 export const ProductsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
+      setError(null);
       try {
         const data = await listProducts(0, searchTerm);
-        setProducts(data);
-      } catch (error) {
+        // Ensure data is an array, default to empty array if null or undefined
+        setProducts(Array.isArray(data) ? data : []);
+      } catch (error: any) {
         console.error("Error fetching products:", error.message);
+        setError(error.message || "Failed to fetch products");
+        // Set to empty array in case of error
+        setProducts([]);
       }
       setLoading(false);
     };
@@ -49,13 +55,29 @@ export const ProductsPage = () => {
         </button>
       </div>
 
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
       {loading ? (
         <div className="text-center py-12">
           <p className="text-gray-500">Loading products...</p>
         </div>
       ) : products.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No products found matching your criteria.</p>
+        <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg">
+          <Package className="w-16 h-16 text-gray-400 mb-4" />
+          <p className="text-xl text-gray-600 mb-4">No products found</p>
+          {searchTerm ? (
+            <p className="text-gray-500 mb-6">
+              No products match your search "{searchTerm}"
+            </p>
+          ) : (
+            <p className="text-gray-500 mb-6">
+              There are currently no products available
+            </p>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

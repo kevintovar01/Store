@@ -70,6 +70,14 @@ export const AccountPage: React.FC = () => {
     setIsSaving(false);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    window.dispatchEvent(new Event('storage')); // Notifica cambios
+    localStorage.clear(); // Example of clearing local storage
+    navigate('/login');
+  };
+  
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-8">
@@ -77,7 +85,7 @@ export const AccountPage: React.FC = () => {
         <Button
           variant="outline"
           icon={<LogOut className="w-5 h-5" />}
-          onClick={() => navigate('/login')}
+          onClick={handleLogout}
         >
           Logout
         </Button>

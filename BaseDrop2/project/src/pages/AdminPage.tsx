@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Save, X } from 'lucide-react';
+import { Plus, Save, X, Package } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { createProduct, listProducts, uploadProductImage } from '../api/products';
 import type { Product } from '../types';
@@ -15,14 +15,14 @@ export const AdminPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    price: ''  // Changed to string to handle input properly
+    price: ''
   });
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
 
     if (!token) {
-      navigate('/login'); // Redirect to login if no token
+      navigate('/login'); 
       return;
     }
     fetchProducts();
@@ -35,14 +35,17 @@ export const AdminPage: React.FC = () => {
       if (!token) {
         throw new Error('No authentication token found');
       }
-      const data = await listProducts(0); // Start with page 0
-      setProducts(data);
-    } catch (error) {
+      const data = await listProducts(0);
+      // Ensure data is an array, default to empty array if null or undefined
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (error: any) {
       if (error?.response?.status === 401) {
         navigate('/login');
       }
       setError('Failed to fetch products');
       console.error('Error fetching products:', error);
+      // Set to empty array in case of error
+      setProducts([]);
     }
   };
 
@@ -64,32 +67,38 @@ export const AdminPage: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-
+  
     try {
       const token = localStorage.getItem('authToken');
-
+  
       if (!token) {
         throw new Error('No authentication token found');
       }
-
+  
       // Convert price to number for API call
-      //cambio
       const productData = {
         ...formData,
         price: parseFloat(formData.price) || 0
       };
-
+  
       // Create product
       const newProduct = await createProduct(productData, token);
-
+  
       // Upload image if selected
       if (selectedImage && newProduct.id) {
-        await uploadProductImage(newProduct.id, selectedImage, token);
+        try {
+          await uploadProductImage(newProduct.id, selectedImage, token);
+        } catch (uploadError) {
+          // Log the upload error but continue with the flow
+          console.error('Image upload failed:', uploadError);
+          // Optionally, show a more user-friendly message
+          setError('Product created, but image upload failed');
+        }
       }
-
+  
       // Refresh products list
       await fetchProducts();
-
+  
       // Reset form and close modal
       setIsModalOpen(false);
       setFormData({
@@ -129,14 +138,13 @@ export const AdminPage: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((product) => {
+      {products.map((product) => {
             const baseUrl = "http://localhost:5050";
-            const imageUrl = `${baseUrl}${product.url}`;
-            product.server_image_url = imageUrl;
-  
+            const imageUrl = product.url ? `${baseUrl}${product.url}` : '';
+            
             return(
             <div key={product.id} className="bg-white rounded-lg shadow-sm p-4">
-              {product.url && (
+              {imageUrl && (
                 <img
                   src={imageUrl}
                   alt={product.name}

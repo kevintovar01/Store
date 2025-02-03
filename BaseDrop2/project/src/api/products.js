@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5050/products';
+const API_URL_HOME ='http://localhost:5050';
 
 export const createProduct = async (productData, token) => {
     try {
@@ -61,7 +62,7 @@ export const uploadProductImage = async (productId, imageFile, token) => {
         const formData = new FormData();
         formData.append('image', imageFile);
 
-        const response = await axios.post(`${API_URL}/image/${productId}`, formData, {
+        const response = await axios.post(`${API_URL_HOME}/image/${productId}`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
                 Authorization: `Bearer ${token}`

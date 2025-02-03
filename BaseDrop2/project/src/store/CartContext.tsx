@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import type { CartItem, Product } from '../types';
 
 interface CartState {
@@ -13,7 +14,7 @@ type CartAction =
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'CLEAR_CART' }
   | { type: 'SET_AUTHENTICATION'; payload: boolean }
-  | { type: 'SET_CART_ITEMS'; payload: CartItem[] };  // Añadir esta acción
+  | { type: 'SET_CART_ITEMS'; payload: CartItem[] };
 
 const CartContext = createContext<{
   state: CartState;
@@ -33,7 +34,6 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
               : item
           ),
           total: state.total + action.payload.price,
-          
         };
       }
       return {
@@ -68,17 +68,96 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       return { ...state, items: [], total: 0 };
     case 'SET_AUTHENTICATION':
       return { ...state, isAuthenticated: action.payload };
+    case 'SET_CART_ITEMS':
+      return {
+        ...state,
+        items: action.payload,
+        total: action.payload.reduce((sum, item) => sum + item.price * item.quantity, 0)
+      };
     default:
       return state;
   }
 };
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(cartReducer, { items: [], total: 0, isAuthenticated: false });
+  const [state, dispatch] = useReducer(cartReducer, {
+    items: [], 
+    total: 0, 
+    isAuthenticated: !!localStorage.getItem('authToken')
+  });
+
+  // Hook personalizado para verificar autenticación
+  const useAuthCheck = () => {
+    const location = useLocation();
+
+    useEffect(() => {
+      const checkAuthStatus = () => {
+        const authToken = localStorage.getItem('authToken');
+        const isCurrentlyAuthenticated = !!authToken;
+
+        // Verificar si el estado actual de autenticación es diferente
+        if (isCurrentlyAuthenticated !== state.isAuthenticated) {
+          dispatch({ 
+            type: 'SET_AUTHENTICATION', 
+            payload: isCurrentlyAuthenticated 
+          });
+        }
+      };
+
+      // Verificar al cambiar de ruta
+      checkAuthStatus();
+    }, [location.pathname]);
+  };
+
+  // Listener para cambios en localStorage
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'authToken') {
+        dispatch({ 
+          type: 'SET_AUTHENTICATION', 
+          payload: !!event.newValue 
+        });
+      }
+    };
+
+    // Listener para eventos de almacenamiento
+    window.addEventListener('storage', handleStorageChange);
+
+    // Función para manejar cambios en el token durante la carga
+    const checkAuthStatus = () => {
+      const authToken = localStorage.getItem('authToken');
+      dispatch({ 
+        type: 'SET_AUTHENTICATION', 
+        payload: !!authToken 
+      });
+    };
+
+    // Verificar estado inicial
+    checkAuthStatus();
+
+    // Eventos personalizados para autenticación
+    window.addEventListener('login', checkAuthStatus);
+    window.addEventListener('logout', checkAuthStatus);
+
+    // Limpiar listeners
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('login', checkAuthStatus);
+      window.removeEventListener('logout', checkAuthStatus);
+    };
+  }, []);
+
+  // Componente wrapper para usar el hook de verificación de autenticación
+  const ChildrenWithAuthCheck: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    useAuthCheck();
+    return <>{children}</>;
+  };
 
   return (
     <CartContext.Provider value={{ state, dispatch }}>
-      {children}
+      <ChildrenWithAuthCheck>
+        {children}
+      </ChildrenWithAuthCheck>
     </CartContext.Provider>
   );
 };

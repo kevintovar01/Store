@@ -18,7 +18,7 @@ export const LoginPage: React.FC = () => {
     try {
       const token = await login(formData.email, formData.password);
       localStorage.setItem('authToken', token);
-      navigate('/home');
+      navigate('/');
     } catch (error) {
       alert('Error al iniciar sesión. Inténtalo nuevamente.' + error);
     } finally {
