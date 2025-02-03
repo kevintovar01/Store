@@ -30,3 +30,5 @@ notes.txt
 
 handlers/post.go
 models/post.go
+tmp/
+main

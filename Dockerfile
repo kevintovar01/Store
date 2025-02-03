@@ -1,36 +1,23 @@
-ARG GO_VERSION=1.23.4
-# alpine son distribuciones muy peque;as para hacer costrucciones de aplicaciones.
-FROM golang:${GO_VERSION}-alpine AS builder
+# Dockerfile.dev
 
+FROM golang:1.23.4-alpine
+
+RUN apk update && apk add --no-cache git ca-certificates && update-ca-certificates
 RUN go env -w GOPROXY=direct
-RUN apk add --no-cache git 
-# certificados de seguridad para correr el servidor
-RUN apk --no-cache add ca-certificates && update-ca-certificates
 
+# Instalar Air con la ruta actualizada
+RUN go install github.com/air-verse/air@latest
 
+WORKDIR /app
 
-WORKDIR /src
-
-COPY ./go.mod ./go.sum ./
+# Copiar los archivos de dependencias (opcional, para cache)
+COPY go.mod go.sum ./
 RUN go mod download
 
-# copio todos mis directorios dentro del contenedor
-COPY ./ ./
-
-RUN CGO_ENABLED=0 go build \
-    -installsuffix 'static' \
-    -o /store-rest-ws 
-
-# scratch encargada de ejecutar la aplicacion.
-FROM scratch AS runner
-
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-
-COPY .env ./
-
-COPY --from=builder /store-rest-ws /store-rest-ws
+# Copiar el código (opcional, ya que el bind mount lo actualizará)
+COPY . .
 
 EXPOSE 5050
-ENTRYPOINT [ "/store-rest-ws" ]
 
-
+# Ejecutar Air para hot reload
+ENTRYPOINT ["air"]

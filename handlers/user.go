@@ -139,6 +139,7 @@ func MyHandler(s server.Server) http.HandlerFunc {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+
 			w.Header().Set("content-type", "application/json")
 			json.NewEncoder(w).Encode(user)
 
