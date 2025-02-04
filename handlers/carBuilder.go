@@ -28,25 +28,25 @@ func (cb *carBuilder) LoadOrCreate() error {
 
 	var err error
 	cb.car, err = repository.GetWishCarById(cb.r.Context(), cb.userId)
-	log.Println("car: ", cb.car)
 	if err != nil {
 		return err
 	}
 	if cb.car.Id == "" {
-		log.Println("se creo el carrito de compras solo uno")
+		log.Println("Se esta creando el carro")
 		id, err := ksuid.NewRandom()
 		if err != nil {
 			return err
 		}
 		cb.car = models.NewCar(id.String(), cb.userId, 0)
-		log.Println("c2ar: ", cb.car)
 		err = repository.CreateWishCar(cb.r.Context(), cb.car)
 		if err != nil {
 			return err
 		}
+
+		log.Println("car final creado: ", cb.car)
 	}
 
-	log.Println("car: ", cb.car)
+	log.Println("car final creado: ", cb.car)
 	return nil
 }
 

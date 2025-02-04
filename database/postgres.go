@@ -266,6 +266,9 @@ func (repo *PostgresRepository) GetImageById(ctx context.Context, productId stri
 
 func (repo *PostgresRepository) CreateWishCar(ctx context.Context, whishCar *models.Car) error {
 	log.Println("CreateWishCar", whishCar)
+	log.Println("carID", whishCar.Id)
+	log.Println("userID:", whishCar.UserId)
+	log.Println("total:", whishCar.Total)
 	_, err := repo.db.ExecContext(
 		ctx,
 		"INSERT INTO wishcar (id, user_id, total) VALUES ($1, $2, $3)",
@@ -362,12 +365,19 @@ func (repo *PostgresRepository) UpdateWishCar(ctx context.Context, wishCar *mode
 	return err
 }
 
-func (repo *PostgresRepository) ListItems(ctx context.Context, carId string) ([]*models.CarItem, error) {
+func (repo *PostgresRepository) ListItems(ctx context.Context, userId string) ([]*models.CarItem, error) {
 	// offset es la cantidad de registros que se saltara
 	rows, err := repo.db.QueryContext(
 		ctx,
-		"SELECT id, car_id, product_id, quantity FROM car_item WHERE car_id = $1",
-		carId)
+		`SELECT ci.id, 
+				ci.car_id, 
+				ci.product_id, 
+				ci.quantity
+		   FROM car_item AS ci
+		   JOIN wishcar AS w ON w.id = ci.car_id
+		  WHERE w.user_id = $1`,
+		userId,
+	)
 
 	if err != nil {
 		return nil, err

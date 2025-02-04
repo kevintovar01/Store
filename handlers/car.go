@@ -50,61 +50,6 @@ func GetInstanceCar(userId string, total float64, r *http.Request) (*models.Car,
 	return car, nil
 }
 
-func CreateWishCarHandler(s server.Server) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		token, err := middleware.TokenAuth(s, w, *r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		if claim, ok := token.Claims.(*models.AppClaims); ok && token.Valid {
-			car, err := GetInstanceCar(claim.UserId, 0, r)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(&CarResponse{
-				Id:    car.Id,
-				Total: car.Total,
-			})
-
-		} else {
-			http.Error(w, "invalid token", http.StatusInternalServerError)
-			return
-		}
-
-	}
-}
-
-func GetWishCarByIdHandler(s server.Server) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		token, err := middleware.TokenAuth(s, w, *r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		if claim, ok := token.Claims.(*models.AppClaims); ok && token.Valid {
-
-			car, err := GetInstanceCar(claim.UserId, 0, r)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Content-Type", "aplication/json")
-			json.NewEncoder(w).Encode(car)
-
-		} else {
-			http.Error(w, "invalid token", http.StatusInternalServerError)
-			return
-		}
-
-	}
-}
-
 func AddItemHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
@@ -121,6 +66,8 @@ func AddItemHandler(s server.Server) http.HandlerFunc {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
+
+			log.Println("el id del producto es: ", claim.UserId)
 
 			builder := NewCarBuilder(claim.UserId, r)
 			builder.LoadOrCreate()
@@ -144,7 +91,12 @@ func ListItemHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		// pageStr := r.URL.Query().Get("page")
-		params := mux.Vars(r)
+		token, err := middleware.TokenAuth(s, w, *r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
 		//var page = uint64(0)
 		// if pageStr != "" {
 		// 	page, err = strconv.ParseUint(pageStr, 10, 64)
@@ -153,16 +105,22 @@ func ListItemHandler(s server.Server) http.HandlerFunc {
 		// 		return
 		// 	}
 		// }
-		carItem, err := repository.ListItems(r.Context(), params["id"])
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		if claim, ok := token.Claims.(*models.AppClaims); ok && token.Valid {
+			carItem, err := repository.ListItems(r.Context(), claim.UserId)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			// w.header nos permite enviar una cabecera en la respuesta
+			//content-type es el tipo de contenido que se esta enviando
+			//application/json es el tipo de contenido que se esta enviando
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(carItem)
+		} else {
+			http.Error(w, "invalid token", http.StatusInternalServerError)
 			return
 		}
-		// w.header nos permite enviar una cabecera en la respuesta
-		//content-type es el tipo de contenido que se esta enviando
-		//application/json es el tipo de contenido que se esta enviando
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(carItem)
 	}
 }
 

@@ -60,10 +60,9 @@ func BindRoutes(s server.Server, r *mux.Router) {
 	r.HandleFunc("/products/{id}", middleware.RoleProxy([]string{"admin"}, s)(handlers.DeleteProductHandler(s))).Methods(http.MethodDelete)
 	r.HandleFunc("/products", handlers.ListProductHandler(s)).Methods(http.MethodGet)
 	// urls for the carwish
-	r.HandleFunc("/createCar", handlers.CreateWishCarHandler(s)).Methods(http.MethodPost)
+
 	r.HandleFunc("/addItem/{id}", handlers.AddItemHandler(s)).Methods(http.MethodPost)
-	r.HandleFunc("/wishcar", handlers.GetWishCarByIdHandler(s)).Methods(http.MethodGet)
-	r.HandleFunc("/wishcar/{id}", handlers.ListItemHandler(s)).Methods(http.MethodGet)
+	r.HandleFunc("/wishcar", handlers.ListItemHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/wishcar/{id}", handlers.RemoveItemHandler(s)).Methods(http.MethodDelete)
 
 	//roles urls
