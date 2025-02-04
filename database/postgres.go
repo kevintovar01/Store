@@ -265,9 +265,10 @@ func (repo *PostgresRepository) GetImageById(ctx context.Context, productId stri
 }
 
 func (repo *PostgresRepository) CreateWishCar(ctx context.Context, whishCar *models.Car) error {
+	log.Println("CreateWishCar", whishCar)
 	_, err := repo.db.ExecContext(
 		ctx,
-		"INSERT INTO wishcar (id, user_id, total) VALUES ($1, $2, $3) RETURNING id",
+		"INSERT INTO wishcar (id, user_id, total) VALUES ($1, $2, $3)",
 		whishCar.Id,
 		whishCar.UserId,
 		whishCar.Total)
@@ -275,12 +276,14 @@ func (repo *PostgresRepository) CreateWishCar(ctx context.Context, whishCar *mod
 }
 
 func (repo *PostgresRepository) AddItem(ctx context.Context, carItem *models.CarItem) error {
+	log.Println("AddItem", carItem)
 	_, err := repo.db.ExecContext(
 		ctx,
 		"INSERT INTO car_item (car_id, product_id, quantity) VALUES ($1, $2, $3)",
 		carItem.CarId,
 		carItem.ProductId,
 		carItem.Quantity)
+
 	return err
 }
 
@@ -380,6 +383,7 @@ func (repo *PostgresRepository) ListItems(ctx context.Context, carId string) ([]
 	var carItems []*models.CarItem
 	for rows.Next() {
 		var carItem = models.CarItem{}
+
 		if err = rows.Scan(
 			&carItem.Id,
 			&carItem.CarId,
@@ -392,7 +396,7 @@ func (repo *PostgresRepository) ListItems(ctx context.Context, carId string) ([]
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-
+	log.Println("itemscar:", carItems)
 	return carItems, nil
 }
 

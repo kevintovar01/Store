@@ -25,22 +25,28 @@ func NewCarBuilder(userId string, r *http.Request) *carBuilder {
 }
 
 func (cb *carBuilder) LoadOrCreate() error {
+
 	var err error
 	cb.car, err = repository.GetWishCarById(cb.r.Context(), cb.userId)
+	log.Println("car: ", cb.car)
 	if err != nil {
 		return err
 	}
 	if cb.car.Id == "" {
+		log.Println("se creo el carrito de compras solo uno")
 		id, err := ksuid.NewRandom()
 		if err != nil {
 			return err
 		}
 		cb.car = models.NewCar(id.String(), cb.userId, 0)
+		log.Println("c2ar: ", cb.car)
 		err = repository.CreateWishCar(cb.r.Context(), cb.car)
 		if err != nil {
 			return err
 		}
 	}
+
+	log.Println("car: ", cb.car)
 	return nil
 }
 
@@ -50,6 +56,7 @@ func (cb *carBuilder) AddProduct(product_id string, quantity int) error {
 	if err != nil {
 		return err
 	}
+
 	log.Println("el item es", carItem)
 	if carItem.Id == "" {
 		carItem := models.CarItem{
@@ -57,10 +64,12 @@ func (cb *carBuilder) AddProduct(product_id string, quantity int) error {
 			ProductId: product_id,
 			Quantity:  quantity,
 		}
+		log.Println("el item es 2", carItem)
 		err = repository.AddItem(cb.r.Context(), &carItem)
 		if err != nil {
 			return err
 		}
+		log.Println("el item es 3", carItem)
 	} else {
 		err = repository.UpdateQuantity(cb.r.Context(), product_id, quantity)
 		if err != nil {
