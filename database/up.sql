@@ -1,3 +1,6 @@
+-- Habilitar la extensión pgcrypto
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE users(
@@ -6,6 +9,26 @@ CREATE TABLE users(
     email VARCHAR(255) UNIQUE NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+DROP TABLE IF EXISTS bussinessman;
+
+CREATE TABLE bussinessman (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id VARCHAR(32) UNIQUE NOT NULL,
+    company_name VARCHAR(255) NOT NULL,
+    company_id VARCHAR(255) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+-- CREATE TABLE empresarios (
+--     id VARCHAR(32) PRIMARY KEY,
+--     user_id VARCHAR(32) UNIQUE NOT NULL,
+--     company_name VARCHAR(255) NOT NULL,
+--     company_address TEXT NOT NULL,
+--     tax_id VARCHAR(50) UNIQUE NOT NULL,
+--     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+-- );
 
 DROP TABLE IF EXISTS products;
 
@@ -22,8 +45,7 @@ CREATE TABLE products(
 
 DROP TABLE IF EXISTS images;
 
--- Habilitar la extensión pgcrypto
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 
 CREATE TABLE images(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Usar UUID para claves únicasa
@@ -65,12 +87,30 @@ CREATE TABLE wishcar(
 
 DROP TABLE IF EXISTS car_item;
 
-
 CREATE TABLE car_item (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     car_id VARCHAR(32) NOT NULL,
     product_id VARCHAR(32) NOT NULL,
     quantity INT NOT NULL CHECK (quantity > 0),
     FOREIGN KEY (car_id) REFERENCES wishcar(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products ON DELETE CASCADE
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+
+DROP TABLE IF EXISTS roles;
+
+CREATE TABLE roles(
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL
+);
+
+
+DROP TABLE IF EXISTS users_roles;
+
+CREATE TABLE users_roles(
+    user_id VARCHAR(32) NOT NULL,
+    role_id INT NOT NULL,
+    PRIMARY KEY (user_id, role_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE 
 );

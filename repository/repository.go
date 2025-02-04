@@ -32,6 +32,16 @@ type Repository interface {
 	UpdateQuantity(ctx context.Context, productId string, quiantity int) error
 	ListItems(ctx context.Context, carId string) ([]*models.CarItem, error)
 
+	// roles
+	CreateRole(ctx context.Context, role *models.Role) error
+	ListRoles(ctx context.Context) ([]*models.Role, error)
+	GetRole(ctx context.Context, name string) (*models.Role, error)
+	SetRoleUser(ctx context.Context, userId string, roleId int) error
+	GetUserRoles(ctx context.Context, userId string) ([]string, error)
+
+	//bussiness
+	InsertUserBusiness(ctx context.Context, bussinessman *models.Bussinessman) error
+
 	Close() error
 }
 
@@ -116,6 +126,33 @@ func UpdateQuantity(ctx context.Context, productId string, quantity int) error {
 
 func ListItems(ctx context.Context, carId string) ([]*models.CarItem, error) {
 	return implementation.ListItems(ctx, carId)
+}
+
+// roles
+func CreateRole(ctx context.Context, role *models.Role) error {
+	return implementation.CreateRole(ctx, role)
+}
+
+func ListRoles(ctx context.Context) ([]*models.Role, error) {
+	return implementation.ListRoles(ctx)
+}
+
+func GetRole(ctx context.Context, name string) (*models.Role, error) {
+	return implementation.GetRole(ctx, name)
+}
+
+func SetRoleUser(ctx context.Context, userId string, roleId int) error {
+	return implementation.SetRoleUser(ctx, userId, roleId)
+}
+
+func GetUserRoles(ctx context.Context, userId string) ([]string, error) {
+	return implementation.GetUserRoles(ctx, userId)
+}
+
+// bussiness
+
+func InsertUserBusiness(ctx context.Context, bussinessman *models.Bussinessman) error {
+	return implementation.InsertUserBusiness(ctx, bussinessman)
 }
 
 func Close() error {

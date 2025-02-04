@@ -280,8 +280,7 @@ func InsertImageHandler(s server.Server) http.HandlerFunc {
 				http.Error(w, "Error to upload the image", http.StatusInternalServerError)
 				return
 			}
-			log.Println(params["id"])
-			log.Println("imageID from insert: ", imageID)
+
 			err = repository.LinkProductToImage(r.Context(), params["id"], imageID)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)

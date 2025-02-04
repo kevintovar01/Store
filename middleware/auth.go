@@ -1,12 +1,15 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/kevintovar01/Store/models"
+	"github.com/kevintovar01/Store/repository"
 	"github.com/kevintovar01/Store/server"
 )
 
@@ -14,6 +17,7 @@ var (
 	//rutas para indicar la middleware que no necesita autenticacion
 	NOT_AUTH_NEEDED = []string{
 		"signup",
+		"signupBusiness",
 		"login",
 		"/",
 	}
@@ -77,4 +81,46 @@ func TokenAuth(s server.Server, w http.ResponseWriter, r http.Request) (*jwt.Tok
 
 	return token, nil
 
+}
+
+// RoleProxy verifica si el usuario tiene el rol necesario antes de ejecutar el handler original.
+func RoleProxy(allowedRoles []string, s server.Server) func(next http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			token, err := TokenAuth(s, w, *r)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+				return
+			}
+
+			claims, ok := token.Claims.(*models.AppClaims)
+			if !ok || !token.Valid {
+				http.Error(w, "invalid token", http.StatusUnauthorized)
+				return
+			}
+			// Obtiene los roles del usuario desde la BD
+			roles, err := repository.GetUserRoles(context.Background(), claims.UserId)
+			if err != nil {
+				http.Error(w, "Error retrieving user roles", http.StatusInternalServerError)
+				return
+			}
+
+			log.Println(roles)
+
+			roleMap := make(map[string]bool)
+			for _, role := range roles {
+				roleMap[strings.ToLower(role)] = true
+			}
+
+			for _, allowedRole := range allowedRoles {
+				if roleMap[strings.ToLower(allowedRole)] {
+					next(w, r)
+					return
+				}
+			}
+
+			http.Error(w, "Forbidden: insufficient privileges", http.StatusForbidden)
+
+		}
+	}
 }

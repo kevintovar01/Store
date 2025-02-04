@@ -22,7 +22,6 @@ export const createProduct = async (productData, token) => {
 export const getProductById = async (productId) => {
     try {
         const response = await axios.get(`${API_URL}/${productId}`);
-        console.log('Response:', response.data);
         return response.data;
     } catch (error) {
         console.error('Error fetching product:', error);

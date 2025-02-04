@@ -28,6 +28,14 @@ type SingUpResponse struct {
 	Email string `json:"email"`
 }
 
+type SingUpbussinesResponse struct {
+	Id          string `json:"id"`
+	Email       string `json:"email"`
+	UserId      string `json:"user_id"`
+	CompanyName string `json:"company_name"`
+	CompanyId   string `json:"company_id"`
+}
+
 type LoginResponse struct {
 	Token string `json:"token"`
 }
@@ -147,5 +155,59 @@ func MyHandler(s server.Server) http.HandlerFunc {
 			http.Error(w, "invalid token", http.StatusInternalServerError)
 			return
 		}
+	}
+}
+
+func InsertUserBusinessHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		var bussinessman = models.Bussinessman{}
+		err := json.NewDecoder(r.Body).Decode(&bussinessman)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(bussinessman.Password), HASH_COST) // Encriptacion de password
+		if err != nil {
+			http.Error(w, "invalid token", http.StatusUnauthorized)
+		}
+
+		id, err := ksuid.NewRandom() // id aletorio.
+		if err != nil {
+			http.Error(w, "invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		bussinessman = models.Bussinessman{
+			User: models.User{
+				Id:       id.String(),
+				Email:    bussinessman.Email,
+				Password: string(hashedPassword),
+			},
+			UserId:      id.String(),
+			CompanyName: bussinessman.CompanyName,
+			CompanyId:   bussinessman.CompanyId,
+		}
+
+		err = repository.InsertUser(r.Context(), &bussinessman.User)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		err = repository.InsertUserBusiness(r.Context(), &bussinessman)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(SingUpbussinesResponse{
+			Id:          bussinessman.Id,
+			Email:       bussinessman.Email,
+			UserId:      bussinessman.UserId,
+			CompanyName: bussinessman.CompanyName,
+			CompanyId:   bussinessman.CompanyId,
+		})
+
 	}
 }

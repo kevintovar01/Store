@@ -49,14 +49,17 @@ func BindRoutes(s server.Server, r *mux.Router) {
 	// url for the users
 	r.HandleFunc("/", handlers.HomeHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/signup", handlers.SingUpHandler(s)).Methods(http.MethodPost)
+	r.HandleFunc("/signupBusiness", handlers.InsertUserBusinessHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/login", handlers.LoginHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/me", handlers.MyHandler(s)).Methods(http.MethodGet)
 	// url for the products
 	r.HandleFunc("/products", handlers.InsertProductHandler(s)).Methods(http.MethodPost)
-	r.HandleFunc("/image/{id}", handlers.InsertImageHandler(s)).Methods(http.MethodPost)
-	r.HandleFunc("/products/{id}", handlers.GetProductByIdHandler(s)).Methods(http.MethodGet)
-	r.HandleFunc("/products/{id}", handlers.UpdateProductHandler(s)).Methods(http.MethodPut)
-	r.HandleFunc("/products/{id}", handlers.DeleteProductHandler(s)).Methods(http.MethodDelete)
+
+	r.HandleFunc("/products", middleware.RoleProxy([]string{"admin"}, s)(handlers.InsertProductHandler(s))).Methods(http.MethodPost)
+	r.HandleFunc("/image/{id}", middleware.RoleProxy([]string{"admin"}, s)(handlers.InsertImageHandler(s))).Methods(http.MethodPost)
+	r.HandleFunc("/products/{id}", middleware.RoleProxy([]string{"admin"}, s)(handlers.GetProductByIdHandler(s))).Methods(http.MethodGet)
+	r.HandleFunc("/products/{id}", middleware.RoleProxy([]string{"admin"}, s)(handlers.UpdateProductHandler(s))).Methods(http.MethodPut)
+	r.HandleFunc("/products/{id}", middleware.RoleProxy([]string{"admin"}, s)(handlers.DeleteProductHandler(s))).Methods(http.MethodDelete)
 	r.HandleFunc("/products", handlers.ListProductHandler(s)).Methods(http.MethodGet)
 	// urls for the carwish
 	r.HandleFunc("/createCar", handlers.CreateWishCarHandler(s)).Methods(http.MethodPost)
@@ -64,6 +67,13 @@ func BindRoutes(s server.Server, r *mux.Router) {
 	r.HandleFunc("/wishcar", handlers.GetWishCarByIdHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/wishcar/{id}", handlers.ListItemHandler(s)).Methods(http.MethodGet)
 	r.HandleFunc("/wishcar/{id}", handlers.RemoveItemHandler(s)).Methods(http.MethodDelete)
+
+	//roles urls
+	r.HandleFunc("/createRole", middleware.RoleProxy([]string{"admin"}, s)(handlers.CreateRoleHandler(s))).Methods(http.MethodPost)
+	r.HandleFunc("/listRoles", middleware.RoleProxy([]string{"admin"}, s)(handlers.ListRolesHandler(s))).Methods(http.MethodGet)
+	r.HandleFunc("/getRole", handlers.GetRoleHandler(s)).Methods(http.MethodGet)
+	r.HandleFunc("/setRole", handlers.SetRoleUserHandler(s)).Methods(http.MethodPost)
+	r.HandleFunc("/getUserRoles", handlers.GetUserRolesHandler(s)).Methods(http.MethodGet)
 
 	// el handler de websocket se encarga de manejar las conexiones de websocket
 	r.HandleFunc("/ws", s.Hub().HandleWebSocket)

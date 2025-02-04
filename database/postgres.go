@@ -395,3 +395,120 @@ func (repo *PostgresRepository) ListItems(ctx context.Context, carId string) ([]
 
 	return carItems, nil
 }
+
+// roles
+
+func (repo PostgresRepository) CreateRole(ctx context.Context, role *models.Role) error {
+	_, err := repo.db.ExecContext(
+		ctx,
+		"INSERT INTO roles (name) VALUES ($1)",
+		role.Name)
+	return err
+}
+
+func (repo PostgresRepository) ListRoles(ctx context.Context) ([]*models.Role, error) {
+	rows, err := repo.db.QueryContext(
+		ctx,
+		"SELECT id, name FROM roles")
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	var roles []*models.Role
+	for rows.Next() {
+		var role = models.Role{}
+		if err = rows.Scan(
+			&role.Id,
+			&role.Name); err == nil {
+			roles = append(roles, &role)
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return roles, nil
+}
+
+func (repo PostgresRepository) GetRole(ctx context.Context, name string) (*models.Role, error) {
+	rows, err := repo.db.QueryContext(
+		ctx,
+		"SELECT id, name FROM roles WHERE name= $1",
+		name)
+
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	var role = models.Role{}
+	for rows.Next() {
+		if err = rows.Scan(&role.Id, &role.Name); err == nil {
+			return &role, nil
+		}
+
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &role, nil
+}
+
+func (repo PostgresRepository) SetRoleUser(ctx context.Context, userId string, roleId int) error {
+	_, err := repo.db.ExecContext(
+		ctx,
+		"INSERT INTO users_roles (user_id, role_id) VALUES ($1, $2)",
+		userId,
+		roleId,
+	)
+	return err
+}
+
+func (repo PostgresRepository) GetUserRoles(ctx context.Context, userId string) ([]string, error) {
+	rows, err := repo.db.QueryContext(
+		ctx,
+		"SELECT r.name FROM users_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = $1",
+		userId)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	var roles []string
+	for rows.Next() {
+		var roleName string
+		if err := rows.Scan(&roleName); err != nil {
+			return nil, err
+		}
+		roles = append(roles, roleName)
+	}
+	return roles, nil
+}
+
+func (repo PostgresRepository) InsertUserBusiness(ctx context.Context, bussinessman *models.Bussinessman) error {
+	_, err := repo.db.ExecContext(
+		ctx,
+		"INSERT INTO bussinessman (user_id, company_name, company_id) VALUES ($1, $2, $3)",
+		bussinessman.UserId,
+		bussinessman.CompanyName,
+		bussinessman.CompanyId)
+	return err
+}

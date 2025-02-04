@@ -48,6 +48,9 @@ export const AdminPage: React.FC = () => {
     try {
       const token = localStorage.getItem('authToken');
 
+      
+      
+
       if (!token) {
         throw new Error('No authentication token found');
       }

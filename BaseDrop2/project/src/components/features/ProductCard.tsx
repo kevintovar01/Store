@@ -10,7 +10,6 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  console.log(product);
   const { dispatch } = useCart();
   const [showDetails, setShowDetails] = useState(false);
 
