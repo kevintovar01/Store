@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Save, X, Package } from 'lucide-react';
+import { Plus, Save, X, Edit, Trash2, ImageIcon } from 'lucide-react';
 import { Button } from '../components/common/Button';
-import { createProduct, listProducts, uploadProductImage } from '../api/products';
+import { createProduct, listProducts, uploadProductImage, updateProduct, deleteProduct } from '../api/products';
 import type { Product } from '../types';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,9 +9,12 @@ export const AdminPage: React.FC = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -27,6 +30,19 @@ export const AdminPage: React.FC = () => {
     }
     fetchProducts();
   }, [navigate]);
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    // Conservamos todos los datos existentes del producto
+    setFormData({
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      // Mantenemos una copia de los datos originales para comparar cambios
+      originalData: { ...product }
+    });
+    setIsModalOpen(true);
+  };
 
   const fetchProducts = async () => {
     try {
@@ -70,36 +86,63 @@ export const AdminPage: React.FC = () => {
   
     try {
       const token = localStorage.getItem('authToken');
-  
       if (!token) {
         throw new Error('No authentication token found');
       }
   
-      // Convert price to number for API call
-      const productData = {
-        ...formData,
-        price: parseFloat(formData.price) || 0
-      };
-  
-      // Create product
-      const newProduct = await createProduct(productData, token);
-  
-      // Upload image if selected
-      if (selectedImage && newProduct.id) {
-        try {
-          await uploadProductImage(newProduct.id, selectedImage, token);
-        } catch (uploadError) {
-          // Log the upload error but continue with the flow
-          console.error('Image upload failed:', uploadError);
-          // Optionally, show a more user-friendly message
-          setError('Product created, but image upload failed');
+      if (editingProduct) {
+        // Actualización de producto existente
+        const updatedFields: Partial<Product> = {};
+        
+        // Solo incluimos los campos que han sido modificados
+        if (formData.name !== editingProduct.name) {
+          updatedFields.name = formData.name;
+        }
+        if (formData.description !== editingProduct.description) {
+          updatedFields.description = formData.description;
+        }
+        if (parseFloat(formData.price) !== editingProduct.price) {
+          updatedFields.price = parseFloat(formData.price);
+        }
+
+        // Si hay campos modificados, actualizamos el producto
+        if (Object.keys(updatedFields).length > 0) {
+          await updateProduct(editingProduct.id, updatedFields, token);
+        }
+
+        // Manejamos la actualización de imagen por separado
+        if (selectedImage) {
+          try {
+            await uploadProductImage(editingProduct.id, selectedImage, token);
+          } catch (uploadError) {
+            console.error('Image upload failed:', uploadError);
+            setError('Product updated, but image upload failed');
+          }
+        }
+      } else {
+        // Creación de nuevo producto
+        const productData = {
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price) || 0
+        };
+
+        const newProduct = await createProduct(productData, token);
+
+        if (selectedImage && newProduct.id) {
+          try {
+            await uploadProductImage(newProduct.id, selectedImage, token);
+          } catch (uploadError) {
+            console.error('Image upload failed:', uploadError);
+            setError('Product created, but image upload failed');
+          }
         }
       }
   
-      // Refresh products list
+      // Actualizamos la lista de productos
       await fetchProducts();
   
-      // Reset form and close modal
+      // Reseteamos el formulario y cerramos el modal
       setIsModalOpen(false);
       setFormData({
         name: '',
@@ -107,15 +150,45 @@ export const AdminPage: React.FC = () => {
         price: ''
       });
       setSelectedImage(null);
+      setEditingProduct(null);
     } catch (error: any) {
       if (error?.response?.status === 401) {
         navigate('/login');
         return;
       }
-      setError(error.message || 'Failed to create product');
-      console.error('Error creating product:', error);
+      setError(error.message || 'Failed to save product');
+      console.error('Error saving product:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const confirmDeleteProduct = (productId: string) => {
+    setProductToDelete(productId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      await deleteProduct(productToDelete, token);
+      await fetchProducts();
+      setIsDeleteModalOpen(false);
+      setProductToDelete(null);
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
+      setError('Failed to delete product');
+      console.error('Error deleting product:', error);
     }
   };
 
@@ -124,10 +197,14 @@ export const AdminPage: React.FC = () => {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
         <Button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setEditingProduct(null);
+            setIsModalOpen(true);
+          }}
           icon={<Plus className="w-5 h-5" />}
+          className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
         >
-          Add Product
+          Add New Product
         </Button>
       </div>
 
@@ -138,29 +215,98 @@ export const AdminPage: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {products.map((product) => {
-            const baseUrl = "http://localhost:5050";
-            const imageUrl = product.url ? `${baseUrl}${product.url}` : '';
-            
-            return(
-            <div key={product.id} className="bg-white rounded-lg shadow-sm p-4">
-              {imageUrl && (
-                <img
-                  src={imageUrl}
-                  alt={product.name}
-                  className="w-full h-48 object-cover rounded-md mb-4"
-                />
-              )}
-              <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
-              <div className="flex justify-between items-center text-sm text-gray-600 mb-2">
-                <span>${Number(product.price).toFixed(2)}</span>
-              </div>
-              <p className="text-sm text-gray-500">{product.description}</p>
-            </div>
-            );
+        {products.map((product) => {
+          const baseUrl = "http://localhost:5050";
+          const imageUrl = product.url ? `${baseUrl}${product.url}` : '';
           
+          return(
+            <div 
+              key={product.id} 
+              className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden flex flex-col"
+            >
+              {/* Image Section */}
+              <div className="relative h-48">
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                    <ImageIcon className="w-16 h-16 text-gray-400" />
+                  </div>
+                )}
+                
+                {/* Action Buttons Overlay */}
+                <div className="absolute top-2 right-2 flex space-x-2">
+                  <button 
+                    onClick={() => handleEditProduct(product)}
+                    className="bg-white/80 p-1.5 rounded-full shadow hover:bg-white transition"
+                    title="Edit Product"
+                  >
+                    <Edit className="w-5 h-5 text-blue-600" />
+                  </button>
+                  <button 
+                    onClick={() => confirmDeleteProduct(product.id)}
+                    className="bg-white/80 p-1.5 rounded-full shadow hover:bg-white transition"
+                    title="Delete Product"
+                  >
+                    <Trash2 className="w-5 h-5 text-red-600" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Product Details Section */}
+              <div className="p-4 flex flex-col flex-grow">
+                <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-1">
+                  {product.name}
+                </h3>
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2 flex-grow">
+                  {product.description}
+                </p>
+                <div className="flex justify-between items-center mt-auto">
+                  <span className="text-xl font-semibold text-blue-600">
+                    ${Number(product.price).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
         })}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 text-center">
+            <div className="mb-4">
+              <Trash2 className="mx-auto w-16 h-16 text-red-500 mb-4" />
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                Confirm Delete
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this product? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">

@@ -1,37 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ShoppingCart, User, Menu, Settings, LogIn, UserPlus } from 'lucide-react';
 import { useCart } from '../../store/CartContext';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 export const Navbar: React.FC = () => {
   const { state } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localStorage.getItem('authToken'));
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Verificar autenticación cada vez que cambia la ubicación
+  // Función de verificación de autenticación más robusta
+  const checkAuthStatus = useCallback(() => {
+    const authToken = localStorage.getItem('authToken');
+    setIsAuthenticated(!!authToken);
+  }, []);
+
+  // Efecto para manejar cambios de autenticación
   useEffect(() => {
-    const checkAuthStatus = () => {
-      const authToken = localStorage.getItem('authToken');
-      setIsAuthenticated(!!authToken);
-    };
-
-    // Verificar al cargar la página o cambiar de ruta
+    // Verificar estado inicial de autenticación
     checkAuthStatus();
 
     // Escuchar eventos de almacenamiento para cambios en múltiples pestañas/ventanas
-    window.addEventListener('storage', checkAuthStatus);
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'authToken') {
+        checkAuthStatus();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Configurar un observador personalizado para cambios en localStorage
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+      const event = new Event('storage');
+      (event as any).key = key;
+      (event as any).newValue = value;
+      originalSetItem.apply(this, arguments as any);
+      window.dispatchEvent(event);
+    };
 
     return () => {
-      window.removeEventListener('storage', checkAuthStatus);
+      window.removeEventListener('storage', handleStorageChange);
+      localStorage.setItem = originalSetItem;
     };
-  }, [location.pathname]); // Dependencia añadida para que se ejecute en cada cambio de ruta
+  }, [checkAuthStatus]);
 
   // Función para manejar el cierre de sesión
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     setIsAuthenticated(false);
-    // Puedes añadir lógica adicional de logout aquí si es necesario
+    navigate('/login'); // Redirigir a página de login
+    setIsMenuOpen(false); // Cerrar menú móvil
   };
 
   return (
@@ -63,28 +83,33 @@ export const Navbar: React.FC = () => {
               )}
             </Link>
 
-            {/* Authentication Links */}
-            {!isAuthenticated ? (
-              <>
-                <Link to="/login" className="text-gray-700 hover:text-blue-600 p-2 flex items-center">
-                  <LogIn className="w-5 h-5 mr-1" /> Login
-                </Link>
-                <Link to="/register" className="text-gray-700 hover:text-blue-600 p-2 flex items-center">
-                  <UserPlus className="w-5 h-5 mr-1" /> Register
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link to="/account" className="text-gray-700 hover:text-blue-600 p-2">
-                  <User className="w-6 h-6" />
-                </Link>
-                <Link to="/admin" className="text-gray-700 hover:text-blue-600 p-2">
-                  <Settings className="w-6 h-6" />
-                </Link>
-                
-              </>
-            )}
-          </div>
+            <div className="hidden sm:flex sm:items-center sm:space-x-8">
+          {!isAuthenticated ? (
+            <>
+              <Link to="/login" className="text-gray-700 hover:text-blue-600 p-2 flex items-center">
+                <LogIn className="w-5 h-5 mr-1" /> Login
+              </Link>
+              <Link to="/register" className="text-gray-700 hover:text-blue-600 p-2 flex items-center">
+                <UserPlus className="w-5 h-5 mr-1" /> Register
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to="/account" className="text-gray-700 hover:text-blue-600 p-2">
+                <User className="w-6 h-6" />
+              </Link>
+              <Link to="/admin" className="text-gray-700 hover:text-blue-600 p-2">
+                <Settings className="w-6 h-6" />
+              </Link>
+              {/**<button 
+                onClick={handleLogout} 
+                className="text-gray-700 hover:text-red-600 p-2"
+              >
+                Logout
+              </button> */}
+            </>
+          )}
+        </div>
 
           {/* Mobile Menu Button */}
           <div className="sm:hidden flex items-center">
@@ -100,46 +125,38 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="sm:hidden">
-          <div className="pt-2 pb-3 space-y-1">
-            <Link to="/store" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
-              Store
-            </Link>
-            <Link to="/products" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
-              Products
-            </Link>
-            <Link to="/cart" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
-              Cart ({state.items.length})
-            </Link>
-
-            {!isAuthenticated ? (
-              <>
-                <Link to="/login" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
-                  Login
-                </Link>
-                <Link to="/register" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
-                  Register
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link to="/account" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
-                  Account
-                </Link>
-                <Link to="/admin" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
-                  Admin
-                </Link>
-                <button 
-                  onClick={handleLogout} 
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-red-600"
-                >
-                  Logout
-                </button>
-              </>
-            )}
+          <div className="sm:hidden">
+            <div className="pt-2 pb-3 space-y-1">
+              {/* Otras opciones de menú */}
+              {!isAuthenticated ? (
+                <>
+                  <Link to="/login" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
+                    Login
+                  </Link>
+                  <Link to="/register" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
+                    Register
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/account" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
+                    Account
+                  </Link>
+                  <Link to="/admin" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
+                    Admin
+                  </Link>
+                  {/** <button 
+                    onClick={handleLogout} 
+                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-red-600"
+                  >
+                    Logout
+                  </button> */}
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </nav>
   );
 };
