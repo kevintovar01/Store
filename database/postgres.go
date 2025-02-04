@@ -96,10 +96,11 @@ func (repo *PostgresRepository) InsertProduct(ctx context.Context, product *mode
 	// execContext permite ejecutar codigo sql
 	_, err := repo.db.ExecContext(
 		ctx,
-		"INSERT INTO products (id, name, price, user_id, description) VALUES ($1, $2, $3, $4, $5)",
+		"INSERT INTO products (id, name, price, stock, user_id, description) VALUES ($1, $2, $3, $4, $5, $6)",
 		product.Id,
 		product.Name,
 		product.Price,
+		product.Stock,
 		product.User_id,
 		product.Description)
 	return err
@@ -108,10 +109,11 @@ func (repo *PostgresRepository) InsertProduct(ctx context.Context, product *mode
 func (repo *PostgresRepository) UpdateProduct(ctx context.Context, product *models.Product) error {
 	_, err := repo.db.ExecContext(
 		ctx,
-		"UPDATE products SET name = $1, description = $2, price = $3 WHERE id = $4 and user_id = $5",
+		"UPDATE products SET name = $1, description = $2, price = $3, stock = $4 WHERE id = $5 and user_id = $6",
 		product.Name,
 		product.Description,
 		product.Price,
+		product.Stock,
 		product.Id,
 		product.User_id)
 	return err
@@ -129,7 +131,8 @@ func (repo *PostgresRepository) ListProduct(ctx context.Context, page uint64) ([
 		`SELECT 
 			p.id, 
 			p.name, 
-			p.price, 
+			p.price,
+			p.stock, 
 			p.user_id, 
 			p.description, 
 			p.created_at,
@@ -160,6 +163,7 @@ func (repo *PostgresRepository) ListProduct(ctx context.Context, page uint64) ([
 			&product.Id,
 			&product.Name,
 			&product.Price,
+			&product.Stock,
 			&product.User_id,
 			&product.Description,
 			&product.CreatedAt,
@@ -176,9 +180,26 @@ func (repo *PostgresRepository) ListProduct(ctx context.Context, page uint64) ([
 	return products, nil
 }
 
-func (repo *PostgresRepository) GetProductById(ctx context.Context, id string) (*models.Product, error) {
-	rows, err := repo.db.QueryContext(ctx, "SELECT id, name, price, user_id, description, created_at FROM products WHERE id = $1", id)
-	log.Println(id)
+func (repo *PostgresRepository) GetProductById(ctx context.Context, id string) (*models.ProductList, error) {
+	rows, err := repo.db.QueryContext(
+		ctx,
+		`SELECT p.id,
+			p.name,
+			p.price,
+			p.stock,
+			p.user_id,
+			p.description,
+			p.created_at,
+			COALESCE(i.url, '/uploads/default/product.jpg') AS url
+		FROM products AS p
+		LEFT JOIN product_images AS pi ON pi.product_id = p.id
+		LEFT JOIN images AS i ON i.id = pi.image_id
+		WHERE p.id = $1;`,
+		id,
+	)
+	//SELECT r.name FROM users_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = $1
+
+	log.Println("in date base", id)
 
 	defer func() {
 		err = rows.Close()
@@ -187,10 +208,10 @@ func (repo *PostgresRepository) GetProductById(ctx context.Context, id string) (
 		}
 	}()
 
-	var product = models.Product{}
+	var product = models.ProductList{}
 	for rows.Next() {
 		// toma rows he intenta mapear los valores de las columnas "SELECT id email FROM" dentro del modelo de datos de usuario.
-		if err = rows.Scan(&product.Id, &product.Name, &product.Price, &product.User_id, &product.Description, &product.CreatedAt); err == nil { // parseo datos para se adaptados al modelo post
+		if err = rows.Scan(&product.Id, &product.Name, &product.Price, &product.Stock, &product.User_id, &product.Description, &product.CreatedAt, &product.Url); err == nil { // parseo datos para se adaptados al modelo post
 			return &product, nil
 		}
 	}
@@ -199,6 +220,7 @@ func (repo *PostgresRepository) GetProductById(ctx context.Context, id string) (
 		return nil, err
 	}
 
+	log.Println(product)
 	return &product, nil
 }
 

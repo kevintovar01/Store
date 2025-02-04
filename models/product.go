@@ -9,6 +9,7 @@ type Product struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Price       float64   `json:"price"`
+	Stock       string    `json:"stock"`
 	User_id     string    `json:"user_id"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -18,6 +19,7 @@ type ProductList struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Price       float64   `json:"price"`
+	Stock       string    `json:"stock"`
 	User_id     string    `json:"user_id"`
 	Url         string    `json:"url"`
 	CreatedAt   time.Time `json:"created_at"`

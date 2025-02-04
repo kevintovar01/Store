@@ -14,7 +14,7 @@ type Repository interface {
 
 	// Crud for product
 	InsertProduct(ctx context.Context, product *models.Product) error
-	GetProductById(ctx context.Context, id string) (*models.Product, error)
+	GetProductById(ctx context.Context, id string) (*models.ProductList, error)
 	UpdateProduct(ctx context.Context, product *models.Product) error
 	DeleteProduct(ctx context.Context, id string, userId string) error
 	ListProduct(ctx context.Context, page uint64) ([]*models.ProductList, error)
@@ -67,7 +67,7 @@ func InsertProduct(ctx context.Context, product *models.Product) error {
 	return implementation.InsertProduct(ctx, product)
 }
 
-func GetProductById(ctx context.Context, id string) (*models.Product, error) {
+func GetProductById(ctx context.Context, id string) (*models.ProductList, error) {
 	return implementation.GetProductById(ctx, id)
 }
 

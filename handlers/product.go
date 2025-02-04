@@ -23,6 +23,7 @@ type UpsertProductRequest struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
+	Stock       string  `json:"stock"`
 }
 
 type ProductUpdateResponse struct {
@@ -33,6 +34,7 @@ type ProductResponse struct {
 	Id    string  `json:"id"`
 	Name  string  `json:"name"`
 	Price float64 `json:"price"`
+	Stock string  `json:"stock"`
 }
 
 type GetProductResponse struct {
@@ -40,6 +42,7 @@ type GetProductResponse struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Price       float64   `json:"price"`
+	Stock       string    `json:"stock"`
 	User_id     string    `json:"user_id"`
 	CreatedAt   time.Time `json:"created_at"`
 	Url         string    `json:"url"`
@@ -71,6 +74,7 @@ func InsertProductHandler(s server.Server) http.HandlerFunc {
 				Name:        productRequest.Name,
 				Description: productRequest.Description,
 				Price:       productRequest.Price,
+				Stock:       productRequest.Stock,
 				User_id:     claim.UserId,
 			}
 
@@ -90,6 +94,7 @@ func InsertProductHandler(s server.Server) http.HandlerFunc {
 				Id:    id.String(),
 				Name:  productRequest.Name,
 				Price: productRequest.Price,
+				Stock: productRequest.Stock,
 			})
 		} else {
 			http.Error(w, "invalid token", http.StatusInternalServerError)
@@ -119,6 +124,7 @@ func UpdateProductHandler(s server.Server) http.HandlerFunc {
 				Name:        productRequest.Name,
 				Description: productRequest.Description,
 				Price:       productRequest.Price,
+				Stock:       productRequest.Stock,
 				User_id:     claim.UserId,
 			}
 
@@ -147,13 +153,8 @@ func UpdateProductHandler(s server.Server) http.HandlerFunc {
 func GetProductByIdHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
+		log.Println(params["id"])
 		product, err := repository.GetProductById(r.Context(), params["id"])
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		image, err := repository.GetImageById(r.Context(), params["id"])
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -165,9 +166,10 @@ func GetProductByIdHandler(s server.Server) http.HandlerFunc {
 			Name:        product.Name,
 			Description: product.Description,
 			Price:       product.Price,
+			Stock:       product.Stock,
 			User_id:     product.User_id,
 			CreatedAt:   product.CreatedAt,
-			Url:         image.Url})
+			Url:         product.Url})
 	}
 }
 

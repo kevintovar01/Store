@@ -37,6 +37,7 @@ CREATE TABLE products(
     name VARCHAR(255) NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     user_id VARCHAR(32) NOT NULL,
+    stock VARCHAR(255) NOT NULL,
     description TEXT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
