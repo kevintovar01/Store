@@ -200,6 +200,19 @@ func InsertUserBusinessHandler(s server.Server) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		role, err := repository.GetRole(r.Context(), "admin")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = repository.SetRoleUser(r.Context(), bussinessman.User.Id, role.Id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(SingUpbussinesResponse{
 			Id:          bussinessman.Id,

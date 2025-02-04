@@ -53,8 +53,6 @@ func BindRoutes(s server.Server, r *mux.Router) {
 	r.HandleFunc("/login", handlers.LoginHandler(s)).Methods(http.MethodPost)
 	r.HandleFunc("/me", handlers.MyHandler(s)).Methods(http.MethodGet)
 	// url for the products
-	r.HandleFunc("/products", handlers.InsertProductHandler(s)).Methods(http.MethodPost)
-
 	r.HandleFunc("/products", middleware.RoleProxy([]string{"admin"}, s)(handlers.InsertProductHandler(s))).Methods(http.MethodPost)
 	r.HandleFunc("/image/{id}", middleware.RoleProxy([]string{"admin"}, s)(handlers.InsertImageHandler(s))).Methods(http.MethodPost)
 	r.HandleFunc("/products/{id}", middleware.RoleProxy([]string{"admin"}, s)(handlers.GetProductByIdHandler(s))).Methods(http.MethodGet)

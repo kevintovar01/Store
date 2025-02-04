@@ -104,6 +104,9 @@ CREATE TABLE roles(
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
+INSERT INTO roles (name) VALUES ('admin');
+
+
 
 DROP TABLE IF EXISTS users_roles;
 
