@@ -66,14 +66,13 @@ export function RegisterPage() {
     try {
       let response;
       if (userType === 'regular') {
-        response = await signup(formData.email, formData.password); // Usamos la función signup para registro regular
+        response = await signup(formData.email, formData.password);
+        navigate('/login') // Usamos la función signup para registro regular
       } else {
-        response = await signupBusiness(formData.email, formData.password, formData.companyName, formData.companyID); // Usamos signupBusiness para el registro de negocios
+        response = await signupBusiness(formData.email, formData.password, formData.companyName, formData.companyID);
+        navigate('/login') // Usamos signupBusiness para el registro de negocios
       }
-      if (response.success) {
-        navigate('/login');
-      }
-      else if (response.token) {
+      if (response.token) {
         localStorage.setItem('authToken', response.token); // Guardamos el token en localStorage
         setNotification({ type: 'success', message: 'Registration successful!' });
         userType === 'business' ? navigate('/business-setup') : navigate('/login');
