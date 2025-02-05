@@ -18,7 +18,8 @@ export const AdminPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    price: ''
+    price: '',
+    stock: ''
   });
 
   useEffect(() => {
@@ -33,16 +34,24 @@ export const AdminPage: React.FC = () => {
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
-    // Conservamos todos los datos existentes del producto
     setFormData({
       name: product.name,
       description: product.description,
       price: product.price.toString(),
-      // Mantenemos una copia de los datos originales para comparar cambios
+      stock: product.stock?.toString() || '0',
       originalData: { ...product }
     });
     setIsModalOpen(true);
   };
+
+  const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Solo permitir números enteros positivos
+    if (value === '' || /^\d+$/.test(value)) {
+      setFormData(prev => ({ ...prev, stock: value }));
+    }
+  };
+
 
   const fetchProducts = async () => {
     try {
@@ -94,10 +103,8 @@ export const AdminPage: React.FC = () => {
       }
   
       if (editingProduct) {
-        // Actualización de producto existente
         const updatedFields: Partial<Product> = {};
         
-        // Solo incluimos los campos que han sido modificados
         if (formData.name !== editingProduct.name) {
           updatedFields.name = formData.name;
         }
@@ -107,13 +114,14 @@ export const AdminPage: React.FC = () => {
         if (parseFloat(formData.price) !== editingProduct.price) {
           updatedFields.price = parseFloat(formData.price);
         }
+        if (parseInt(formData.stock) !== editingProduct.stock) {
+          updatedFields.stock = parseInt(formData.stock);
+        }
 
-        // Si hay campos modificados, actualizamos el producto
         if (Object.keys(updatedFields).length > 0) {
           await updateProduct(editingProduct.id, updatedFields, token);
         }
 
-        // Manejamos la actualización de imagen por separado
         if (selectedImage) {
           try {
             await uploadProductImage(editingProduct.id, selectedImage, token);
@@ -123,11 +131,11 @@ export const AdminPage: React.FC = () => {
           }
         }
       } else {
-        // Creación de nuevo producto
         const productData = {
           name: formData.name,
           description: formData.description,
-          price: parseFloat(formData.price) || 0
+          price: parseFloat(formData.price) || 0,
+          stock: parseInt(formData.stock) || 0
         };
 
         const newProduct = await createProduct(productData, token);
@@ -142,15 +150,14 @@ export const AdminPage: React.FC = () => {
         }
       }
   
-      // Actualizamos la lista de productos
       await fetchProducts();
   
-      // Reseteamos el formulario y cerramos el modal
       setIsModalOpen(false);
       setFormData({
         name: '',
         description: '',
-        price: ''
+        price: '',
+        stock: ''
       });
       setSelectedImage(null);
       setEditingProduct(null);
@@ -310,12 +317,14 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {isModalOpen && (
+{isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900">Add New Product</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">
+                  {editingProduct ? 'Edit Product' : 'Add New Product'}
+                </h2>
                 <button
                   onClick={() => setIsModalOpen(false)}
                   className="text-gray-500 hover:text-gray-700"
@@ -360,6 +369,20 @@ export const AdminPage: React.FC = () => {
                     value={formData.price}
                     onChange={handlePriceChange}
                     placeholder="0.00"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Stock
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.stock}
+                    onChange={handleStockChange}
+                    placeholder="0"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
