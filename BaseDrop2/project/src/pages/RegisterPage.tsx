@@ -79,6 +79,8 @@ export function RegisterPage() {
         formData.companyName,
         formData.companyID
       );
+      if (result.success) {
+        navigate('/');}
       if (result.error) {
         setNotification({ type: 'error', message: result.error });
         return;
