@@ -10,18 +10,14 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Función de verificación de autenticación más robusta
   const checkAuthStatus = useCallback(() => {
     const authToken = localStorage.getItem('authToken');
     setIsAuthenticated(!!authToken);
   }, []);
 
-  // Efecto para manejar cambios de autenticación
   useEffect(() => {
-    // Verificar estado inicial de autenticación
     checkAuthStatus();
-
-    // Escuchar eventos de almacenamiento para cambios en múltiples pestañas/ventanas
+    
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'authToken') {
         checkAuthStatus();
@@ -29,30 +25,18 @@ export const Navbar: React.FC = () => {
     };
 
     window.addEventListener('storage', handleStorageChange);
-
-    // Configurar un observador personalizado para cambios en localStorage
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function(key, value) {
-      const event = new Event('storage');
-      (event as any).key = key;
-      (event as any).newValue = value;
-      originalSetItem.apply(this, arguments as any);
-      window.dispatchEvent(event);
-    };
-
+    
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      localStorage.setItem = originalSetItem;
     };
   }, [checkAuthStatus]);
 
-  // Función para manejar el cierre de sesión
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('authToken');
     setIsAuthenticated(false);
-    navigate('/login'); // Redirigir a página de login
-    setIsMenuOpen(false); // Cerrar menú móvil
-  };
+    navigate('/login');
+    setIsMenuOpen(false);
+  }, [navigate]);
 
   return (
     <nav className="bg-white shadow-md">
@@ -67,8 +51,12 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
-            <Link to="/store" className="text-gray-700 hover:text-blue-600 px-3 py-2">Store</Link>
-            <Link to="/products" className="text-gray-700 hover:text-blue-600 px-3 py-2">Products</Link>
+            <Link to="/store" className="text-gray-700 hover:text-blue-600 px-3 py-2">
+              Store
+            </Link>
+            <Link to="/products" className="text-gray-700 hover:text-blue-600 px-3 py-2">
+              Products
+            </Link>
             <Link to="/virtual-try-on" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-700 hover:bg-indigo-200">
               Virtual Try-On
             </Link>
@@ -83,74 +71,122 @@ export const Navbar: React.FC = () => {
               )}
             </Link>
 
-            <div className="hidden sm:flex sm:items-center sm:space-x-8">
-          {!isAuthenticated ? (
-            <>
-              <Link to="/login" className="text-gray-700 hover:text-blue-600 p-2 flex items-center">
-                <LogIn className="w-5 h-5 mr-1" /> Login
-              </Link>
-              <Link to="/register" className="text-gray-700 hover:text-blue-600 p-2 flex items-center">
-                <UserPlus className="w-5 h-5 mr-1" /> Register
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link to="/account" className="text-gray-700 hover:text-blue-600 p-2">
-                <User className="w-6 h-6" />
-              </Link>
-              <Link to="/admin" className="text-gray-700 hover:text-blue-600 p-2">
-                <Settings className="w-6 h-6" />
-              </Link>
-              {/**<button 
-                onClick={handleLogout} 
-                className="text-gray-700 hover:text-red-600 p-2"
-              >
-                Logout
-              </button> */}
-            </>
-          )}
-        </div>
+            {/* Authentication Links */}
+            <div className="flex items-center space-x-4">
+              {!isAuthenticated ? (
+                <>
+                  <Link 
+                    to="/login" 
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Login
+                  </Link>
+                  <Link 
+                    to="/register" 
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Register
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link 
+                    to="/account" 
+                    className="text-gray-700 hover:text-blue-600 p-2"
+                    aria-label="Account"
+                  >
+                    <User className="w-6 h-6" />
+                  </Link>
+                  <Link 
+                    to="/admin" 
+                    className="text-gray-700 hover:text-blue-600 p-2"
+                    aria-label="Settings"
+                  >
+                    <Settings className="w-6 h-6" />
+                  </Link>
+                  {/*<button 
+                    onClick={handleLogout}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    Logout
+                  </button>*/}
+                </>
+              )}
+            </div>
+          </div>
 
           {/* Mobile Menu Button */}
           <div className="sm:hidden flex items-center">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-gray-700 hover:text-blue-600 p-2"
+              aria-label="Toggle menu"
             >
               <Menu className="w-6 h-6" />
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
+        {/* Mobile Menu */}
+        {isMenuOpen && (
           <div className="sm:hidden">
-            <div className="pt-2 pb-3 space-y-1">
-              {/* Otras opciones de menú */}
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              <Link 
+                to="/store" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+              >
+                Store
+              </Link>
+              <Link 
+                to="/products" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+              >
+                Products
+              </Link>
+              <Link 
+                to="/virtual-try-on" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+              >
+                Virtual Try-On
+              </Link>
+              
               {!isAuthenticated ? (
                 <>
-                  <Link to="/login" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
+                  <Link 
+                    to="/login" 
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                  >
                     Login
                   </Link>
-                  <Link to="/register" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
+                  <Link 
+                    to="/register" 
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                  >
                     Register
                   </Link>
                 </>
               ) : (
                 <>
-                  <Link to="/account" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
+                  <Link 
+                    to="/account" 
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                  >
                     Account
                   </Link>
-                  <Link to="/admin" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600">
+                  <Link 
+                    to="/admin" 
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                  >
                     Admin
                   </Link>
-                  {/** <button 
-                    onClick={handleLogout} 
-                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-red-600"
+                  {/*<button 
+                    onClick={handleLogout}
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 hover:bg-gray-50"
                   >
                     Logout
-                  </button> */}
+                  </button>*/}
                 </>
               )}
             </div>
