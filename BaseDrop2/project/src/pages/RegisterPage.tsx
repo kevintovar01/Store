@@ -1,7 +1,9 @@
 import React, { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../store/AuthContext';
 import { Building2, User as UserIcon } from 'lucide-react';
-import { API_URL } from '../api/signup';
+import { signup, signupBusiness } from '../api/signup'; // Asegúrate de importar las funciones de signup
+import { format } from 'date-fns';
 
 interface FormErrors {
   email?: string;
@@ -9,31 +11,6 @@ interface FormErrors {
   confirmPassword?: string;
   companyName?: string;
   companyID?: string;
-}
-
-async function signUp(userType: string, email: string, password: string, companyName?: string, companyID?: string) {
-  const url = userType === 'business' ? 'http://localhost:5050/signupBusiness' : 'http://localhost:5050/signup';
-  const body = userType === 'business' 
-    ? { email, password, companyName, companyID } 
-    : { email, password };
-  
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      mode: 'cors',
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to register');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error(error);
-    throw new Error('Failed to register');
-  }
 }
 
 export function RegisterPage() {
@@ -47,27 +24,37 @@ export function RegisterPage() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string; } | null>(null);
+
+  const { state, signUp } = useAuth();
   const navigate = useNavigate();
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
+
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)) {
       newErrors.email = 'Invalid email address';
     }
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
     }
+
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
+
     if (userType === 'business') {
       if (!formData.companyName) newErrors.companyName = 'Company Name is required';
       if (!formData.companyID) newErrors.companyID = 'Company ID is required';
     }
+    console.log(userType);
+    console.log(formData);
+    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -75,24 +62,21 @@ export function RegisterPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+
     try {
-      const result = await signUp(
-        formData.email,
-        formData.password,
-        userType,
-        formData.companyName,
-        formData.companyID
-      );
-      if (result.success) {
-        navigate('/login');
-        return;
+      let response;
+      if (userType === 'regular') {
+        response = await signup(formData.email, formData.password); // Usamos la función signup para registro regular
+      } else {
+        response = await signupBusiness(formData.email, formData.password, formData.companyName, formData.companyID); // Usamos signupBusiness para el registro de negocios
       }
-      else if (result.error) {
-        setNotification({ type: 'error', message: result.error });
-        return;
+
+      // Al recibir la respuesta exitosa, almacenamos el token y navegamos
+      if (response.token) {
+        localStorage.setItem('authToken', response.token); // Guardamos el token en localStorage
+        setNotification({ type: 'success', message: 'Registration successful!' });
+        userType === 'business' ? navigate('/business-setup') : navigate('/');
       }
-      setNotification({ type: 'success', message: 'Registration successful!' });
-      userType === 'business' ? navigate('/business-setup') : navigate('/login');
     } catch (error) {
       setNotification({ type: 'error', message: 'Registration failed. Please try again.' });
     }

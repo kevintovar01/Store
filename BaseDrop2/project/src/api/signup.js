@@ -1,35 +1,37 @@
+import axios from "axios";
+
 const API_URL = "http://localhost:5050";
 
-async function signUp(email, password) {
-    const response = await fetch(`${API_URL}/signup`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
+// Función para registrar un usuario regular
+export async function signup(email, password) {
+  try {
+    const response = await axios.post(`${API_URL}/signup`, {
+      email,
+      password,
     });
-    
-    if (!response.ok) {
-        throw new Error(`Error en signup: ${response.statusText}`);
-    }
-    
-    return response.json();
+
+    console.log("Registro exitoso:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error en el registro:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error en el registro");
+  }
 }
 
-async function signUpBusiness(email, password, companyName, companyId) {
-    const response = await fetch(`${API_URL}/signupBusiness`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password, company_name: companyName, company_id: companyId })
+// Función para registrar un 'Businessman'
+export async function signupBusiness(email, password, companyName, companyId) {
+  try {
+    const response = await axios.post(`${API_URL}/signupBusiness`, {
+      email,
+      password,
+      companyName,
+      companyId,
     });
-    
-    if (!response.ok) {
-        throw new Error(`Error en signupBusiness: ${response.statusText}`);
-    }
-    
-    return response.json();
-}
 
-export { signUp, signUpBusiness };
+    console.log("Registro de negocio exitoso:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error en el registro de negocio:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error en el registro de negocio");
+  }
+}
