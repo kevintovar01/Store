@@ -45,15 +45,15 @@ export const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold text-blue-600">ShopDrop</span>
+              <span className="text-2xl font-bold text-blue-600">COLineStore</span>
             </Link>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
-            <Link to="/store" className="text-gray-700 hover:text-blue-600 px-3 py-2">
+            {/**<Link to="/store" className="text-gray-700 hover:text-blue-600 px-3 py-2">
               Store
-            </Link>
+            </Link>*/}
             <Link to="/products" className="text-gray-700 hover:text-blue-600 px-3 py-2">
               Products
             </Link>
@@ -133,12 +133,12 @@ export const Navbar: React.FC = () => {
         {isMenuOpen && (
           <div className="sm:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              <Link 
+              {/**<Link 
                 to="/store" 
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
               >
                 Store
-              </Link>
+              </Link>*/}
               <Link 
                 to="/products" 
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"

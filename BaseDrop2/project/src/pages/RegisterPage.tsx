@@ -70,12 +70,13 @@ export function RegisterPage() {
       } else {
         response = await signupBusiness(formData.email, formData.password, formData.companyName, formData.companyID); // Usamos signupBusiness para el registro de negocios
       }
-
-      // Al recibir la respuesta exitosa, almacenamos el token y navegamos
-      if (response.token) {
+      if (response.success) {
+        navigate('/login');
+      }
+      else if (response.token) {
         localStorage.setItem('authToken', response.token); // Guardamos el token en localStorage
         setNotification({ type: 'success', message: 'Registration successful!' });
-        userType === 'business' ? navigate('/business-setup') : navigate('/');
+        userType === 'business' ? navigate('/business-setup') : navigate('/login');
       }
     } catch (error) {
       setNotification({ type: 'error', message: 'Registration failed. Please try again.' });
