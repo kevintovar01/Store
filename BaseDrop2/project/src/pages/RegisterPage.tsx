@@ -11,13 +11,18 @@ interface FormErrors {
   companyID?: string;
 }
 
-async function signUp(email: string, password: string, userType: string, companyName?: string, companyID?: string) {
+async function signUp(userType: string, email: string, password: string, companyName?: string, companyID?: string) {
+  const url = userType === 'business' ? 'http://localhost:5050/signupBusiness' : 'http://localhost:5050/signup';
+  const body = userType === 'business' 
+    ? { email, password, companyName, companyID } 
+    : { email, password };
+  
   try {
-    const response = await fetch('http://localhost:5050/signup', {
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, userType, companyName, companyID }),
-      mode: 'cors', // Asegurar que el navegador envíe la solicitud correctamente
+      body: JSON.stringify(body),
+      mode: 'cors',
     });
 
     if (!response.ok) {
@@ -30,7 +35,6 @@ async function signUp(email: string, password: string, userType: string, company
     throw new Error('Failed to register');
   }
 }
-
 
 export function RegisterPage() {
   const [userType, setUserType] = useState<'regular' | 'business'>('regular');
