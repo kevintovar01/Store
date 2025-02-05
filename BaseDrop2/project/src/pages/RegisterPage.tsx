@@ -80,13 +80,15 @@ export function RegisterPage() {
         formData.companyID
       );
       if (result.success) {
-        navigate('/');}
-      if (result.error) {
+        navigate('/login');
+        return;
+      }
+      else if (result.error) {
         setNotification({ type: 'error', message: result.error });
         return;
       }
       setNotification({ type: 'success', message: 'Registration successful!' });
-      userType === 'business' ? navigate('/business-setup') : navigate('/');
+      userType === 'business' ? navigate('/business-setup') : navigate('/login');
     } catch (error) {
       setNotification({ type: 'error', message: 'Registration failed. Please try again.' });
     }
