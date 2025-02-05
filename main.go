@@ -47,25 +47,26 @@ func BindRoutes(s server.Server, r *mux.Router) {
 	r.Use(middleware.CheckAuthMiddleware(s))
 
 	// url for the users
-	r.HandleFunc("/", handlers.HomeHandler(s)).Methods(http.MethodGet)
-	r.HandleFunc("/signup", handlers.SingUpHandler(s)).Methods(http.MethodPost)
-	r.HandleFunc("/signupBusiness", handlers.InsertUserBusinessHandler(s)).Methods(http.MethodPost)
-	r.HandleFunc("/login", handlers.LoginHandler(s)).Methods(http.MethodPost)
-	r.HandleFunc("/me", handlers.MyHandler(s)).Methods(http.MethodGet)
-	// url for the products
+	r.HandleFunc("/", handlers.HomeHandler(s)).Methods(http.MethodGet)                              //esto es home (Ya esta )
+	r.HandleFunc("/signup", handlers.SingUpHandler(s)).Methods(http.MethodPost)                     // debe ir en register
+	r.HandleFunc("/signupBusiness", handlers.InsertUserBusinessHandler(s)).Methods(http.MethodPost) //debe ir en register
+	r.HandleFunc("/login", handlers.LoginHandler(s)).Methods(http.MethodPost)                       //ya esta
+	r.HandleFunc("/me", handlers.MyHandler(s)).Methods(http.MethodGet)                              //perfil ya esta
+
+	// url for the products de (aca esta todo)
 	r.HandleFunc("/products", middleware.RoleProxy([]string{"admin"}, s)(handlers.InsertProductHandler(s))).Methods(http.MethodPost)
 	r.HandleFunc("/image/{id}", middleware.RoleProxy([]string{"admin"}, s)(handlers.InsertImageHandler(s))).Methods(http.MethodPost)
 	r.HandleFunc("/products/{id}", middleware.RoleProxy([]string{"admin"}, s)(handlers.GetProductByIdHandler(s))).Methods(http.MethodGet)
 	r.HandleFunc("/products/{id}", middleware.RoleProxy([]string{"admin"}, s)(handlers.UpdateProductHandler(s))).Methods(http.MethodPut)
 	r.HandleFunc("/products/{id}", middleware.RoleProxy([]string{"admin"}, s)(handlers.DeleteProductHandler(s))).Methods(http.MethodDelete)
 	r.HandleFunc("/products", handlers.ListProductHandler(s)).Methods(http.MethodGet)
-	// urls for the carwish
 
-	r.HandleFunc("/addItem/{id}", handlers.AddItemHandler(s)).Methods(http.MethodPost)
-	r.HandleFunc("/wishcar", handlers.ListItemHandler(s)).Methods(http.MethodGet)
-	r.HandleFunc("/wishcar/{id}", handlers.RemoveItemHandler(s)).Methods(http.MethodDelete)
+	// urls for the carwish es CartPage
+	r.HandleFunc("/addItem/{id}", handlers.AddItemHandler(s)).Methods(http.MethodPost)      //agregar a carrito (+/-)
+	r.HandleFunc("/wishcar", handlers.ListItemHandler(s)).Methods(http.MethodGet)           //Mostrar productos de  carrito
+	r.HandleFunc("/wishcar/{id}", handlers.RemoveItemHandler(s)).Methods(http.MethodDelete) //eliminar item del carrito
 
-	//roles urls
+	//roles urls (ESTE LO IGNORO)
 	r.HandleFunc("/createRole", middleware.RoleProxy([]string{"admin"}, s)(handlers.CreateRoleHandler(s))).Methods(http.MethodPost)
 	r.HandleFunc("/listRoles", middleware.RoleProxy([]string{"admin"}, s)(handlers.ListRolesHandler(s))).Methods(http.MethodGet)
 	r.HandleFunc("/getRole", handlers.GetRoleHandler(s)).Methods(http.MethodGet)

@@ -3,8 +3,7 @@ import { useCart } from '../store/CartContext';
 import { Button } from '../components/common/Button';
 import { Trash2, Plus, Minus, ShoppingBag, CreditCard, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getWishCarById, addItemToCar, listItemsInCar, removeItemFromCar } from '../api/wishcar';
-
+import { getWishCar, addItemToWishCar, listItemsInWishCar, removeItemFromWishCar } from '../api/wishcar';
 
 export const CartPage: React.FC = () => {
   const { state, dispatch } = useCart();
@@ -18,9 +17,9 @@ export const CartPage: React.FC = () => {
     const fetchCart = async () => {
       if (token) {
         try {
-          const cart = await getWishCarById(token);
+          const cart = await getWishCar();
           setCartId(cart.id);
-          dispatch({ type: 'SET_CART_ITEMS', payload: cart.items });  // Usar SET_CART_ITEMS
+          dispatch({ type: 'SET_CART_ITEMS', payload: cart.items });
         } catch (error) {
           console.error('Error fetching cart:', error);
         }
@@ -32,9 +31,9 @@ export const CartPage: React.FC = () => {
   const updateQuantity = async (id: string, quantity: number) => {
     if (quantity < 1 || !cartId || !token) return;
     try {
-      await addItemToCar(cartId, quantity, token);
-      const updatedCart = await listItemsInCar(cartId, token);
-      dispatch({ type: 'SET_CART_ITEMS', payload: updatedCart.items });  // Usar SET_CART_ITEMS
+      await addItemToWishCar(id);  // Se asume que esta función maneja la lógica del carrito
+      const updatedCart = await listItemsInWishCar(cartId);
+      dispatch({ type: 'SET_CART_ITEMS', payload: updatedCart.items });
     } catch (error) {
       console.error('Error updating quantity:', error);
     }
@@ -43,10 +42,10 @@ export const CartPage: React.FC = () => {
   const removeItem = async (id: string) => {
     if (!token) return;
     try {
-      await removeItemFromCar(id, token);
+      await removeItemFromWishCar(id);
       if (cartId) {
-        const updatedCart = await listItemsInCar(cartId, token);
-        dispatch({ type: 'SET_CART_ITEMS', payload: updatedCart.items });  // Usar SET_CART_ITEMS
+        const updatedCart = await listItemsInWishCar(cartId);
+        dispatch({ type: 'SET_CART_ITEMS', payload: updatedCart.items });
       }
     } catch (error) {
       console.error('Error removing item:', error);
@@ -75,8 +74,6 @@ export const CartPage: React.FC = () => {
       </div>
     );
   }
-
-
 
   return (
     <div>

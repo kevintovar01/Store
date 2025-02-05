@@ -1,38 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Tester</title>
     <script>
         let authToken = ""; // Variable global para almacenar el token
-        
+
         async function apiRequest(method, endpoint, body = null, requiresAuth = false) {
             const baseUrl = "http://localhost:5050"; // URL base de tu API
             const headers = { 'Content-Type': 'application/json' };
             if (requiresAuth && authToken) {
                 headers['Authorization'] = `Bearer ${authToken}`;
             }
-        
+
             // Configurar opciones de la solicitud
             const options = {
                 method,
                 headers,
             };
-        
+
             // Solo agregar body si no es una solicitud GET o HEAD
             if (body && method !== 'GET' && method !== 'HEAD') {
                 options.body = JSON.stringify(body);
             }
-        
+
             try {
                 const response = await fetch(`${baseUrl}${endpoint}`, options);
-        
+
                 if (response.status === 401) {
                     alert("Unauthorized: Verifica tu token de autenticación.");
                     return;
                 }
-        
+
                 const contentType = response.headers.get("Content-Type");
                 if (contentType && contentType.includes("application/json")) {
                     const result = await response.json();
@@ -54,10 +55,10 @@
             const formData = new FormData(event.target);
             const body = {};
             formData.forEach((value, key) => (body[key] = value));
-    
+
             // Realizar la solicitud de login
             const response = await apiRequest('POST', '/login', body);
-    
+
             // Guardar el token si está presente en la respuesta
             if (response && response.token) {
                 authToken = response.token; // Almacenar en variable global
@@ -67,7 +68,7 @@
                 alert("Login fallido, verifica tus credenciales.");
             }
         }
-    
+
         function handleFormSubmit(event, method, url, requiresAuth = false) {
             event.preventDefault();
             const formData = new FormData(event.target);
@@ -84,21 +85,21 @@
                 // Convierte "price" a número si existe
                 body[key] = key === "price" ? parseFloat(value) : value;
             });
-        
+
             apiRequest(method, url, body, requiresAuth);
         }
 
 
         async function handleProductAndImage(event) {
             event.preventDefault();
-    
+
             const formData = new FormData(event.target);
             const productData = {
                 name: formData.get("name"),
                 description: formData.get("description"),
                 price: parseFloat(formData.get("price")),
             };
-    
+
             try {
                 // 1. Crear el producto
                 const productResponse = await fetch("http://localhost:5050/products", {
@@ -109,21 +110,21 @@
                     },
                     body: JSON.stringify(productData),
                 });
-    
+
                 if (!productResponse.ok) {
                     const errorText = await productResponse.text();
                     alert(`Error creating product: ${errorText}`);
                     return;
                 }
-    
+
                 const productResult = await productResponse.json();
                 const productID = productResult.id; // Obtener el ID del producto
-    
+
                 // 2. Subir la imagen asociada al producto
                 formData.delete("name");
                 formData.delete("description");
                 formData.delete("price"); // Remover campos que no son necesarios para la subida de la imagen
-    
+
                 const imageResponse = await fetch(`http://localhost:5050/image/${productID}`, {
                     method: "POST",
                     body: formData, // Enviar solo la imagen
@@ -131,13 +132,13 @@
                         "Authorization": `Bearer ${authToken}`,
                     },
                 });
-    
+
                 if (!imageResponse.ok) {
                     const errorText = await imageResponse.text();
                     alert(`Error uploading image: ${errorText}`);
                     return;
                 }
-    
+
                 const imageResult = await imageResponse.json();
                 alert(`Product and image uploaded successfully! Product ID: ${productID}`);
             } catch (error) {
@@ -145,13 +146,15 @@
                 alert("An error occurred. Check the console for details.");
             }
         }
-        
+
     </script>
 </head>
+
 <body>
     <h1>API Tester</h1>
     <p>Introduce el token de autenticación (si es necesario):</p>
-    <input type="text" id="authToken" placeholder="Bearer Token" style="width: 100%; padding: 8px; margin-bottom: 16px;">
+    <input type="text" id="authToken" placeholder="Bearer Token"
+        style="width: 100%; padding: 8px; margin-bottom: 16px;">
 
     <!-- Home -->
     <h2>Home (GET /)</h2>
@@ -179,16 +182,15 @@
     <h2>Get User Info (GET /me)</h2>
     <button onclick="apiRequest('GET', '/me', null, true)">Get User Info</button>
 
-<!-- Insert Product and Upload Image -->
-<h2>Insert Product and Upload Image</h2>
-<form id="productImageForm" enctype="multipart/form-data" onsubmit="handleProductAndImage(event)">
-    <input type="text" name="name" placeholder="Product Name" required>
-    <input type="text" name="description" placeholder="Description" required>
-    <input type="number" name="price" placeholder="Price" step="0.01" required>
-    <input type="file" name="image" id="imageInput" required>
-    <button type="submit">Insert Product and Upload Image</button>
-</form>
-    
+    <!-- Insert Product and Upload Image -->
+    <h2>Insert Product and Upload Image</h2>
+    <form id="productImageForm" enctype="multipart/form-data" onsubmit="handleProductAndImage(event)">
+        <input type="text" name="name" placeholder="Product Name" required>
+        <input type="text" name="description" placeholder="Description" required>
+        <input type="number" name="price" placeholder="Price" step="0.01" required>
+        <input type="file" name="image" id="imageInput" required>
+        <button type="submit">Insert Product and Upload Image</button>
+    </form>
 
     <!-- Get Product by ID -->
 
@@ -197,11 +199,12 @@
         <input type="text" id="productId" placeholder="Product ID" required>
         <button type="submit">Get Product</button>
     </form>
-    
+
 
     <!-- Update Product -->
     <h2>Update Product (PUT /products/{id})</h2>
-    <form onsubmit="handleFormSubmit(event, 'PUT', `/products/${document.getElementById('updateProductId').value}`, true)">
+    <form
+        onsubmit="handleFormSubmit(event, 'PUT', `/products/${document.getElementById('updateProductId').value}`, true)">
         <input type="text" id="updateProductId" placeholder="Product ID" required>
         <input type="text" name="name" placeholder="Updated Name">
         <input type="text" name="description" placeholder="Updated Description">
@@ -211,7 +214,8 @@
 
     <!-- Delete Product -->
     <h2>Delete Product (DELETE /products/{id})</h2>
-    <form onsubmit="handleFormSubmit(event, 'DELETE', `/products/${document.getElementById('deleteProductId').value}`, true)">
+    <form
+        onsubmit="handleFormSubmit(event, 'DELETE', `/products/${document.getElementById('deleteProductId').value}`, true)">
         <input type="text" id="deleteProductId" placeholder="Product ID" required>
         <button type="submit">Delete Product</button>
     </form>
@@ -224,4 +228,5 @@
     <h2>API Response</h2>
     <pre id="result" style="background: #f4f4f4; padding: 16px; border: 1px solid #ddd; overflow: auto;"></pre>
 </body>
+
 </html>

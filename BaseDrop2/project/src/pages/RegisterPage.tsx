@@ -1,7 +1,7 @@
 import React, { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../store/AuthContext';
 import { Building2, User as UserIcon } from 'lucide-react';
+import { API_URL } from '../api/signup';
 
 interface FormErrors {
   email?: string;
@@ -10,6 +10,27 @@ interface FormErrors {
   companyName?: string;
   companyID?: string;
 }
+
+async function signUp(email: string, password: string, userType: string, companyName?: string, companyID?: string) {
+  try {
+    const response = await fetch('http://localhost:5050/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, userType, companyName, companyID }),
+      mode: 'cors', // Asegurar que el navegador envíe la solicitud correctamente
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to register');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    throw new Error('Failed to register');
+  }
+}
+
 
 export function RegisterPage() {
   const [userType, setUserType] = useState<'regular' | 'business'>('regular');
@@ -22,34 +43,27 @@ export function RegisterPage() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string; } | null>(null);
-  
-  const { state, signUp } = useAuth();
   const navigate = useNavigate();
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)) {
       newErrors.email = 'Invalid email address';
     }
-
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
     }
-
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-
     if (userType === 'business') {
       if (!formData.companyName) newErrors.companyName = 'Company Name is required';
       if (!formData.companyID) newErrors.companyID = 'Company ID is required';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -58,9 +72,15 @@ export function RegisterPage() {
     e.preventDefault();
     if (!validateForm()) return;
     try {
-      await signUp(formData.email, formData.password, userType);
-      if (state.error) {
-        setNotification({ type: 'error', message: state.error });
+      const result = await signUp(
+        formData.email,
+        formData.password,
+        userType,
+        formData.companyName,
+        formData.companyID
+      );
+      if (result.error) {
+        setNotification({ type: 'error', message: result.error });
         return;
       }
       setNotification({ type: 'success', message: 'Registration successful!' });
@@ -94,23 +114,23 @@ export function RegisterPage() {
         <form className="space-y-6" onSubmit={handleSubmit}>
           <input name="email" type="email" placeholder="Email address" value={formData.email} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md" />
           {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
-          
+
           <input name="password" type="password" placeholder="Password" value={formData.password} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md" />
           {errors.password && <p className="text-red-600 text-sm">{errors.password}</p>}
-          
+
           <input name="confirmPassword" type="password" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md" />
           {errors.confirmPassword && <p className="text-red-600 text-sm">{errors.confirmPassword}</p>}
-          
+
           {userType === 'business' && (
             <>
               <input name="companyName" type="text" placeholder="Company Name" value={formData.companyName} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md" />
               {errors.companyName && <p className="text-red-600 text-sm">{errors.companyName}</p>}
-              
+
               <input name="companyID" type="text" placeholder="Company ID" value={formData.companyID} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md" />
               {errors.companyID && <p className="text-red-600 text-sm">{errors.companyID}</p>}
             </>
           )}
-          
+
           <button type="submit" className="w-full py-2 px-4 text-white bg-blue-600 rounded-md hover:bg-blue-700">
             {userType === 'business' ? 'Apply for Business Registration' : 'Register'}
           </button>
