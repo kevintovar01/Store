@@ -29,6 +29,7 @@ func NewPostgresRepository(url string) (*PostgresRepository, error) {
 func (repo *PostgresRepository) InsertUser(ctx context.Context, user *models.User) error {
 	// execContext permite ejecutar codigo sql
 	_, err := repo.db.ExecContext(ctx, "INSERT INTO users (id, email, password) VALUES ($1, $2, $3)", user.Id, user.Email, user.Password)
+	log.Println("usuario insertado", user)
 	return err
 }
 
@@ -54,8 +55,6 @@ func (repo *PostgresRepository) GetUserById(ctx context.Context, id string) (*mo
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-
-	log.Println(id)
 
 	return &user, nil
 
@@ -103,6 +102,7 @@ func (repo *PostgresRepository) InsertProduct(ctx context.Context, product *mode
 		product.Stock,
 		product.User_id,
 		product.Description)
+	log.Println("producto insertado", product)
 	return err
 }
 
@@ -434,7 +434,7 @@ func (repo *PostgresRepository) ListItems(ctx context.Context, userId string) ([
 
 // roles
 
-func (repo PostgresRepository) CreateRole(ctx context.Context, role *models.Role) error {
+func (repo *PostgresRepository) CreateRole(ctx context.Context, role *models.Role) error {
 	_, err := repo.db.ExecContext(
 		ctx,
 		"INSERT INTO roles (name) VALUES ($1)",
@@ -442,7 +442,7 @@ func (repo PostgresRepository) CreateRole(ctx context.Context, role *models.Role
 	return err
 }
 
-func (repo PostgresRepository) ListRoles(ctx context.Context) ([]*models.Role, error) {
+func (repo *PostgresRepository) ListRoles(ctx context.Context) ([]*models.Role, error) {
 	rows, err := repo.db.QueryContext(
 		ctx,
 		"SELECT id, name FROM roles")
@@ -474,7 +474,7 @@ func (repo PostgresRepository) ListRoles(ctx context.Context) ([]*models.Role, e
 	return roles, nil
 }
 
-func (repo PostgresRepository) GetRole(ctx context.Context, name string) (*models.Role, error) {
+func (repo *PostgresRepository) GetRole(ctx context.Context, name string) (*models.Role, error) {
 	rows, err := repo.db.QueryContext(
 		ctx,
 		"SELECT id, name FROM roles WHERE name= $1",
@@ -502,7 +502,7 @@ func (repo PostgresRepository) GetRole(ctx context.Context, name string) (*model
 	return &role, nil
 }
 
-func (repo PostgresRepository) SetRoleUser(ctx context.Context, userId string, roleId int) error {
+func (repo *PostgresRepository) SetRoleUser(ctx context.Context, userId string, roleId int) error {
 	_, err := repo.db.ExecContext(
 		ctx,
 		"INSERT INTO users_roles (user_id, role_id) VALUES ($1, $2)",
@@ -512,7 +512,7 @@ func (repo PostgresRepository) SetRoleUser(ctx context.Context, userId string, r
 	return err
 }
 
-func (repo PostgresRepository) GetUserRoles(ctx context.Context, userId string) ([]string, error) {
+func (repo *PostgresRepository) GetUserRoles(ctx context.Context, userId string) ([]string, error) {
 	rows, err := repo.db.QueryContext(
 		ctx,
 		"SELECT r.name FROM users_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = $1",
@@ -539,12 +539,13 @@ func (repo PostgresRepository) GetUserRoles(ctx context.Context, userId string) 
 	return roles, nil
 }
 
-func (repo PostgresRepository) InsertUserBusiness(ctx context.Context, bussinessman *models.Bussinessman) error {
+func (repo *PostgresRepository) InsertUserBusiness(ctx context.Context, bussinessman *models.Bussinessman) error {
 	_, err := repo.db.ExecContext(
 		ctx,
 		"INSERT INTO bussinessman (user_id, company_name, company_id) VALUES ($1, $2, $3)",
 		bussinessman.UserId,
 		bussinessman.CompanyName,
 		bussinessman.CompanyId)
+	log.Println("usuario insertado bussness", bussinessman)
 	return err
 }
